@@ -1,0 +1,47 @@
+{
+  "name": "@hrueger/glue-feature-obs-control",
+  "version": "0.0.1",
+  "scripts": {
+    "build:core": "tsc -b tsconfig.json",
+    "build": "npm run build:core",
+    "prepare": "npm run build",
+    "start": "tsc -w"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@makeproaudio/glue-feature-tools": "^0.0.6",
+    "@makeproaudio/makehaus-nodered-lib": "^1.1.0-beta.19",
+    "@makeproaudio/parameters-js": "^1.1.0-beta.3",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "~14.14.14",
+    "@types/uuid": "^8.3.0",
+    "typescript": "4.0.3"
+  },
+  "glue": {
+    "name": "OBS Control",
+    "id": "6dd1d0fb-d15c-4d02-9870-9e426f4ba5b3",
+    "color": "#2d2b2e",
+    "copyright": "© 2020, Hannes Rüger",
+    "simpleConfigUI": {
+      "tabs": {
+        "general": {
+          "name": "General",
+          "groups": {
+            "myGroup1": {
+              "name": "Group 1",
+              "fields": []
+            }
+          }
+        }
+      }
+    }
+  },
+  "main": "dist/index.js"
+}

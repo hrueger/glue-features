@@ -1,14 +1,19 @@
 {
-  "name": "glue-feature-my-cool-feature",
-  "version": "1.0.0",
+  "name": "@hrueger/glue-feature-music-player",
+  "version": "0.0.1",
   "scripts": {
-    "build:ui": "ng build --prod --modulePath=./ui/ui.module#UIModule",
-    "build:core": "tsc -b tsconfig.json",
     "build": "npm run build:core && npm run build:ui",
-    "setup": "node node_modules/@makeproaudio/glue-feature-tools/scripts/onboarding/onboarding.js",
+    "build:core": "tsc -b tsconfig.json",
+    "build:ui": "ng build --prod --modulePath=./ui/ui.module#UIModule",
+    "prepare": "npm run build",
     "start": "tsc -w"
   },
-  "private": true,
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@angular/animations": "~11.0.5",
     "@angular/common": "~11.0.5",
@@ -33,5 +38,13 @@
     "karma": "~5.2.3",
     "ng-packagr": "^11.0.3",
     "typescript": "4.0.3"
-  }
+  },
+  "glue": {
+    "name": "Music Player",
+    "id": "4e6d1034-3a19-4a93-bff5-d31258e9bbc9",
+    "color": "#ff0000",
+    "copyright": "© 2020, Hannes Rüger",
+    "customConfigUI": "dist/ui/ui.js"
+  },
+  "main": "dist/index.js"
 }

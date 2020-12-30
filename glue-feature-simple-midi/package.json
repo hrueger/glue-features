@@ -1,0 +1,48 @@
+{
+  "name": "@hrueger/glue-feature-simple-midi",
+  "version": "0.0.1",
+  "scripts": {
+    "build:core": "tsc -b tsconfig.json",
+    "build": "npm run build:core",
+    "prepare": "npm run build",
+    "start": "tsc -w"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@makeproaudio/glue-feature-tools": "^0.0.6",
+    "@makeproaudio/makehaus-nodered-lib": "^1.1.0-beta.19",
+    "@makeproaudio/parameters-js": "^1.1.0-beta.3",
+    "@types/uuid": "^8.3.0",
+    "easymidi": "^2.0.1",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "~14.14.14",
+    "typescript": "4.0.3"
+  },
+  "glue": {
+    "name": "Simple Midi",
+    "id": "aafa7ed4-69a5-4e7c-8c8d-1e43812e89a9",
+    "color": "#6C93BE",
+    "copyright": "© 2020, Hannes Rüger",
+    "simpleConfigUI": {
+      "tabs": {
+        "general": {
+          "name": "General",
+          "groups": {
+            "myGroup1": {
+              "name": "Group 1",
+              "fields": []
+            }
+          }
+        }
+      }
+    }
+  },
+  "main": "dist/index.js"
+}

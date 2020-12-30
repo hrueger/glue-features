@@ -1,5 +1,5 @@
-# {{NAME}} Feature
-> {{DESCRIPTION}}
+# OBS Control Feature
+> This is a simple Feature to control OBS.
 
 ## Features:
 - Here you can
@@ -14,6 +14,6 @@ ToDo
 ToDo
 
 ## License
-{{LICENSE}}
+MIT
 
 *This Feature was created using the [Glue Feature Template](https://github.com/makeproaudio/glue-feature-template).*
