@@ -1,0 +1,15 @@
+cd glue-feature-demo-logging
+call %~1
+cd ..
+cd glue-feature-music-player
+call %~1
+cd ..
+cd glue-feature-obs-control
+call %~1
+cd ..
+cd glue-feature-simple-dmx
+call %~1
+cd ..
+cd glue-feature-simple-midi
+call %~1
+cd ..
