@@ -1,0 +1,147 @@
+Mackie Control - MIDI Map			
+			
+Note:			
+* All items should be channel 1, except for the faders, which as set to channels 1-9. MIDI notes can have negative octaves, therefore A1 and A-1 are different."			
+* MIDI notes can have negative octaves; A1 and A-1 are different notes.			
+* "The Behringer X-Touch Mini transposes MIDI notes up an octave, so subtract an octave from the note values given below (eg: A1 becomes A0)."			
+* Studio One's MIDI Monitor window is very useful for observing the signals that your control surface is sending.
+
+Resources:
+- "Mackie Control MIDI Map" - Jeremy J Lee - 1/22/2008 - http://www.jjlee.com/qlab/Mackie%20Control%20MIDI%20Map.pdf [I transcribed most of the information below from this document]
+- "Mackie Control Protocol Software Mappings" - MIDIbox - http://www.midibox.org/dokuwiki/doku.php?id=mc_protocol_mappings [I confirmed the information against this document and revised some labels]
+- Studio One 5 Prime - https://shop.presonus.com/Studio-One-5-Prime 
+- Editor for Windows V1.21 - https://www.behringer.com/product.html?modelCode=P0B3M - [use this software to program your X-Touch Mini (Windows only)]
+
+
+
+ITEM						MIDI SIGNAL/NOTE			VELOCITY/VALUE		CHANNEL
+-------------------------------------------------------------------------------------
+VPOT 1						CC16 (GEN PURPOSE 1)		1 || 65				1
+VPOT 2						CC17 (GEN PURPOSE 2)		1 || 65				1
+VPOT 3						CC18 (GEN PURPOSE 3)		1 || 65				1
+VPOT 4						CC19 (GEN PURPOSE 4)		1 || 65				1
+VPOT 5						CC20						1 || 65				1
+VPOT 6						CC21						1 || 65				1
+VPOT 7						CC22						1 || 65				1
+VPOT 8						CC23						1 || 65				1
+VPOT SELECT CH 1			G#1							127					1
+VPOT SELECT CH 2			A1							127					1
+VPOT SELECT CH 3			A#1							127					1
+VPOT SELECT CH 4			B1							127					1
+VPOT SELECT CH 5			C2							127					1
+VPOT SELECT CH 6			C#2							127					1
+VPOT SELECT CH 7			D2							127					1
+VPOT SELECT CH 8			D#2							127					1
+REC/RDY  CH 1				C-1							127					1
+REC/RDY  CH 2				C#-1						127					1
+REC/RDY  CH 3				D-1							127					1
+REC/RDY  CH 4				D#-1						127					1
+REC/RDY  CH 5				E-1							127					1
+REC/RDY  CH 6				F-1							127					1
+REC/RDY  CH 7				F#-1						127					1
+REC/RDY  CH 8				G-1							127					1
+SOLO CH 1					G#-1						127					1
+SOLO CH 2					A-1							127					1
+SOLO CH 3					A#-1						127					1
+SOLO CH 4					B-1							127					1
+SOLO CH 5					C0							127					1
+SOLO CH 6					C#0							127					1
+SOLO CH 7					D0							127					1
+SOLO CH 8					D#0							127					1
+MUTE  CH 1					E0							127					1
+MUTE  CH 2					F0							127					1
+MUTE  CH 3					F#0							127					1
+MUTE  CH 4					G0							127					1
+MUTE  CH 5					G#0							127					1
+MUTE  CH 6					A0							127					1
+MUTE  CH 7					A#0							127					1
+MUTE  CH 8					B0							127					1
+SELECT CH 1					C1							127					1
+SELECT CH 2					C#1							127					1
+SELECT CH 3					D1							127					1
+SELECT CH 4					D#1							127					1
+SELECT CH 5					E1							127					1
+SELECT CH 6					F1							127					1
+SELECT CH 7					F#1							127					1
+SELECT CH 8					G1							127					1
+FADER TOUCH 1				G#7							127					1
+FADER TOUCH 2				A7							127					1
+FADER TOUCH 3				A#7							127					1
+FADER TOUCH 4				B7							127					1
+FADER TOUCH 5				C8							127					1
+FADER TOUCH 6				C#8							127					1
+FADER TOUCH 7				D8							127					1
+FADER TOUCH 8				D#8							127					1
+FADER TOUCH MASTER			E8							127					1
+FADER MOVE 1				PITCH WHEEL					<=8176				1
+FADER MOVE 2				PITCH WHEEL					<=8176				2
+FADER MOVE 3				PITCH WHEEL					<=8176				3
+FADER MOVE 4				PITCH WHEEL					<=8176				4
+FADER MOVE 5				PITCH WHEEL					<=8176				5
+FADER MOVE 6				PITCH WHEEL					<=8176				6
+FADER MOVE 7				PITCH WHEEL					<=8176				7
+FADER MOVE 8				PITCH WHEEL					<=8176				8
+FADER MOVE MASTER			PITCH WHEEL					<=8176				9
+ASSIGN I/O					E2							127					1
+ASSIGN SENDS				F2							127					1
+ASSIGN PAN					F#2							127					1
+ASSIGN PLUG-INS				G2							127					1
+ASSIGN EQ					G#2							127					1
+ASSIGN DYN					A2							127					1
+BANK LEFT					A#2							127					1
+BANK RIGHT					B2							127					1
+BANK CHANNEL LEFT			C3							127					1
+BANK CHANNEL RIGHT			C#3							127					1
+FLIP						D3							127					1
+EDIT						D#3							127					1
+NAME/VALUE					E3							127					1
+SMPTE/BEATS					F3							127					1
+F1							F#3							127					1
+F2							G3							127					1
+F3							G#3							127					1
+F4							A3							127					1
+F5							A#3							127					1
+F6							B3							127					1
+F7							C4							127					1
+F8							C#4							127					1
+F9							D4							127					1
+F10							D#4							127					1
+F11							E4							127					1
+F12							F4							127					1
+F13							F#4							127					1
+F14							G4							127					1
+F15							G#4							127					1
+F16							A4							127					1
+SHIFT						A#4							127					1
+OPTION						B4							127					1
+CONTROL						C5							127					1
+ALT							C#5							127					1
+AUTOMATION ON				D5							127					1
+AUTOMATION REC/RDY			D#5							127					1
+UNDO						E5							127					1
+AUTOMATION SNAPSHOT			F5							127					1
+AUTOMATION TOUCH			F#5							127					1
+REDO						G5							127					1
+CANCEL						G#5							127					1
+ENTER						A5							127					1
+MARKER						A#5							127					1
+MIXER						B5							127					1
+< FRAME						C6							127					1
+> FRAME						C#6							127					1
+LOOP						D6							127					1
+PUNCH IN					D#6							127					1
+PUNCH OUT					E6							127					1
+HOME						F6							127					1
+END							F#6							127					1
+REWIND						G6							127					1
+FAST FORWARD				G#6							127					1
+STOP						A6							127					1
+PLAY						A#6							127					1
+RECORD						B6							127					1
+CURSOR UP					C7							127					1
+CURSOR DOWN					C#7							127					1
+SCRUB BUTTON				D7							127					1
+ZOOM						D#7							127					1
+CURSOR LEFT					E7							127					1
+CURSOR RIGHT				F7							127					1
+SCRUB WHEEL					CC60						1 || 65				1	
