@@ -3,6 +3,7 @@ import { Stack } from "@makeproaudio/makehaus-nodered-lib/dist/stack/stack";
 import { Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 import { CustomSelectionMode, Feature, HWWidgetType, SelectionMode, ZoneConfig } from "@makeproaudio/glue-feature-tools";
+import { NavigatorSelectionItem } from "@makeproaudio/glue-feature-tools";
 
 export default class MusicPlayerFeature implements Feature {
     public readonly zones: ZoneConfig[] = [
@@ -49,6 +50,7 @@ export default class MusicPlayerFeature implements Feature {
             step: 1,
         }
     ];
+    public navigatorSelectionItems?: NavigatorSelectionItem[] = [];
     private registry: Registry;
     private equalizerMapper; 
 
