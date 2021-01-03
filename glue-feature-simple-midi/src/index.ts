@@ -9,7 +9,7 @@ enum Zone {
     TEST = "TEST"
 }
 
-export default class DmxFeature implements Feature {
+export default class MidiFeature implements Feature {
     public readonly zones: ZoneConfig[] = [
         {
             color: "#f5425a",
