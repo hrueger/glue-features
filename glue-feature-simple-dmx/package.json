@@ -37,7 +37,7 @@
           "groups": {
             "myGroup1": {
               "title": "Group 1",
-              "fields": []
+              "fields": {}
             }
           }
         }
