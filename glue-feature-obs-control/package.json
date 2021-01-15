@@ -32,10 +32,10 @@
     "simpleConfigUI": {
       "tabs": {
         "general": {
-          "name": "General",
+          "title": "General",
           "groups": {
             "myGroup1": {
-              "name": "Group 1",
+              "title": "Group 1",
               "fields": []
             }
           }
