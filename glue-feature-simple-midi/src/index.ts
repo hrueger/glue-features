@@ -1,6 +1,5 @@
-import { ButtonMode, Stack } from "@makeproaudio/makehaus-nodered-lib";
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
-import { Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
+import { BooleanParameter, Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 import * as midi from "easymidi";
 import { Feature, ZoneConfig, HWWidgetType } from "@makeproaudio/glue-feature-tools";
@@ -21,16 +20,15 @@ export default class MidiFeature implements Feature {
     ];
     private registry: Registry;
     midi: midi.Output;
+    private parameters = new Map<number, Parameter<any>>();
 
     public constructor(settings: any, registry: Registry, synapsesManager: any) {
         setSynapsesManager(synapsesManager);
         this.registry = registry;
         const outputs = midi.getOutputs();
         this.midi = new midi.Output(outputs[0]);
-        
-    }
-    
-    public takeStacksForZone(zoneConfig: ZoneConfig, stacks: Map<number, Stack>): void {
+
+        this.parameters = new Map();
         const naturals = {
             0: 48,
             1: 50,
@@ -65,34 +63,36 @@ export default class MidiFeature implements Feature {
             15: 60,
         };
         const notes = naturals;
-        for (const [idx, stack] of stacks) {
-            if (notes[idx]) {
-                const p = new Parameter(v4());
-                stack.bind(p, (evt) => {
-                    if (evt.value == true) {
-                        stack.color = "#ffffff";
-                        this.midi.send("noteon", {
-                            channel: 1,
-                            note: notes[idx],
-                            velocity: 100,
-                        });
-                    } else {
-                        stack.color = "#f5425a";
-                        this.midi.send("noteoff", {
-                            channel: 1,
-                            note: notes[idx],
-                            velocity: 100,
-                        });
-                    }
-                });
-                stack.buttonMode = ButtonMode.MOMENTARY;
-            } else {
-                stack.color = "#000000";
-            }
+        for (const [idx, note] of Object.entries(notes)) {
+            let index = parseInt(idx, 10);
+            const p = new BooleanParameter(false, v4(), (evt) => {
+                if (evt.value == true) {
+                    p.color = "#ffffff";
+                    this.midi.send("noteon", {
+                        channel: 1,
+                        note: note,
+                        velocity: 100,
+                    });
+                } else {
+                    p.color = "#f5425a";
+                    this.midi.send("noteoff", {
+                        channel: 1,
+                        note: note,
+                        velocity: 100,
+                    });
+                }
+            });
+            this.parameters.set(index, p);
+            // parameter.buttonMode = ButtonMode.MOMENTARY;
         }
+        
     }
     
-    public removeZone(zoneConfig: ZoneConfig, parameters: Map<number, Stack>): void {
+    public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> {
+        return this.parameters;
+    }
+    
+    public removeZone(zoneConfig: ZoneConfig, parameters: Map<number, Parameter<any>>): void {
         // throw new Error("Method not implemented.");
     }
 

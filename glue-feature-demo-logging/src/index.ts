@@ -1,6 +1,5 @@
 import { Feature, FeatureSetting, ZoneConfig, SelectionItem } from "@makeproaudio/glue-feature-tools";
-import { Stack, StackModel } from "@makeproaudio/makehaus-nodered-lib";
-import { Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
+import { NumberParameter, Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 
 export type NavigatorSelectionItem = {
@@ -86,11 +85,10 @@ export default class MyFeature implements Feature {
             ],
         },
     ];
-    private parameters: Parameter[] = [];
+    private parameters: Parameter<any>[] = [];
 
     public constructor(settings: FeatureSetting, registry: any, synapsesManager: any) {
         setSynapsesManager(synapsesManager);
-        this.navigatorSelectionItems
     }
 
     public init?(): void {
@@ -101,32 +99,32 @@ export default class MyFeature implements Feature {
         //
     }
 
-    public takeStacksForZone(zoneConfig: ZoneConfig, stacks: Map<number, Stack>): void {
-        //
+    public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> {
+        return new Map();
     }
 
     public onNavigatorSelection(item) {
         console.log("This item was selected:", item.id);
     }
 
-    public onNavigatorFeatureSelected(mappings: Map<number, Map<number, Stack>>) {
+    public onNavigatorFeatureSelected(mappings: Map<number, Map<number, Parameter<any>>>) {
         console.log("---- adding parameters to mapping");
-        for (const [mappingId, stacks] of mappings) {
-            for (const [index, stack] of stacks) {
-                const p = new Parameter(v4());
-                stack.bind(p, (e) => console.log("received an update:", e.value));
+        for (const [mappingId, parameters] of mappings) {
+            for (const [index, parameter] of parameters) {
+                const p = new NumberParameter(0, 0, 100, 1, v4());
+                p.bindFrom(parameter, (e) => console.log("received an update:", e.value));
                 this.parameters.push(p);
             }
         }
     }
-    public onNavigatorFeatureDeselected(mappings: Map<number, Map<number, Stack>>) {
+    public onNavigatorFeatureDeselected(mappings: Map<number, Map<number, Parameter<any>>>) {
         console.log("removing parameters from mapping");
         for (const p of this.parameters) {
             p.unbind();
         }
     }
 
-    public removeZone(zoneConfig: ZoneConfig, stacks: Map<number, Stack>): void {
+    public removeZone(zoneConfig: ZoneConfig, parameters: Map<number, Parameter<any>>): void {
         //
     }
 

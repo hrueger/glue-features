@@ -1,7 +1,6 @@
 import { Feature, ZoneConfig, HWWidgetType } from "@makeproaudio/glue-feature-tools";
-import { Stack } from "@makeproaudio/makehaus-nodered-lib";
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
-import { Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
+import { Parameter, setSynapsesManager, BooleanParameter, NumberParameter } from "@makeproaudio/parameters-js";
 import * as DMX from "dmx";
 import { v4 } from "uuid";
 
@@ -11,7 +10,7 @@ enum Zone {
     VALUES = "VALUES",
 }
 
-export default class SimpleDmxFeature implements Feature {
+export default class SimpleDmxFeature implements Feature { // extends EventEmitter
     public readonly zones: ZoneConfig[] = [
         {
             color: "#000000",
@@ -26,10 +25,6 @@ export default class SimpleDmxFeature implements Feature {
             name: "Values",
             description: "This zone is used for the value of the DMX channels",
             widgetTypes: [HWWidgetType.MOTORFADER],
-            min: 0,
-            max: 255,
-            default: 0,
-            step: 1,
         },
         {
             color: "#00ffff",
@@ -37,10 +32,6 @@ export default class SimpleDmxFeature implements Feature {
             name: "Keys",
             description: "This zone is used for the DMX addresses to control",
             widgetTypes: [HWWidgetType.ENCODER],
-            min: 1,
-            max: 512,
-            default: 1,
-            step: 1,
         },
     ];
     private registry: Registry;
@@ -49,6 +40,7 @@ export default class SimpleDmxFeature implements Feature {
     universe: string;
 
     public constructor(settings: any, registry: Registry, synapsesManager: any) {
+        // super();
         setSynapsesManager(synapsesManager);
         this.registry = registry;
         console.log("DMX Feature initialized");
@@ -58,18 +50,19 @@ export default class SimpleDmxFeature implements Feature {
         this.dmx.addUniverse(this.universe, "enttec-usb-dmx-pro", "COM5");
     }
     
-    public takeStacksForZone(zoneConfig: ZoneConfig, stacks: Map<number, Stack>): void {
+    public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> {
+        const parameters = new Map<number, Parameter<any>>();
         if (zoneConfig.id == Zone.BLACKOUT) {
-            for (const [idx, stack] of stacks) {
-                const p = new Parameter(v4());
-                stack.color = "#000000";
-                stack.bind(p, (v) => {
+            for (let i = 0; i < 40; i++) {
+                const p = new BooleanParameter(false, v4(), (v) => {
                     if (v.value == true) {
-                        stack.color = "#ffffff";
+                        p.color = "#ffffff";
                     } else {
-                        stack.color = "#000000";
+                        p.color = "#000000";
                     }
                 });
+                p.color = "#000000";
+                parameters.set(i, p);
             }
         } else if (zoneConfig.id == Zone.KEYS) {
             const presets = {
@@ -80,31 +73,29 @@ export default class SimpleDmxFeature implements Feature {
                 5: 57,
                 6: 58,
             };
-            for (const [idx, stack] of stacks) {
-                const p = new Parameter(v4());
-                stack.bind(p, (v) => {
-                    this.currentChannels.set(idx, v.value);
+            for (let i = 0; i < 40; i++) {
+                const p = new NumberParameter(presets[i] || null, 1, 512, 1, v4(), (v) => {
+                    this.currentChannels.set(i, v.value);
                 });
-                if (presets[idx]) {
-                    p.update(presets[idx]);
-                }
+                parameters.set(i, p);
             }
         } else if (zoneConfig.id == Zone.VALUES) {
-            for (const [idx, stack] of stacks) {
-                const p = new Parameter(v4());
-                stack.bind(p, (v) => {
-                    const channel = this.currentChannels.get(idx);
+            for (let i = 0; i < 40; i++) {
+                const p = new NumberParameter(0, 0, 255, 1, v4(), (v) => {
+                    const channel = this.currentChannels.get(i);
                     if (channel !== undefined) {
                         this.dmx.update(this.universe, {
                             [channel]: v.value,
                         });
                     }
                 });
+                parameters.set(i, p);
             }
         }
+        return parameters;
     }
     
-    public removeZone(zoneConfig: ZoneConfig, parameters: Map<number, Stack>): void {
+    public removeZone(zoneConfig: ZoneConfig, parameters: Map<number, Parameter<any>>): void {
         // throw new Error("Method not implemented.");
     }
 
