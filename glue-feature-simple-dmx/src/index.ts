@@ -38,6 +38,9 @@ export default class SimpleDmxFeature implements Feature { // extends EventEmitt
     private currentChannels: Map <number, number> = new Map<number, number>();
     dmx: any;
     universe: string;
+    private blackoutParameters: Map<number, Parameter<any>> = new Map<number, Parameter<any>>();
+    private keyParameters: Map<number, Parameter<any>> = new Map<number, Parameter<any>>();
+    private valueParameters: Map<number, Parameter<any>> = new Map<number, Parameter<any>>();
 
     public constructor(settings: any, registry: Registry, synapsesManager: any) {
         // super();
@@ -48,49 +51,53 @@ export default class SimpleDmxFeature implements Feature { // extends EventEmitt
         this.dmx = new DMX();
         this.universe = v4();
         this.dmx.addUniverse(this.universe, "enttec-usb-dmx-pro", "COM5");
+
+        for (let i = 0; i < 40; i++) {
+            const p = new BooleanParameter(false, v4(), (v) => {
+                if (v.value == true) {
+                    p.color = "#ffffff";
+                } else {
+                    p.color = "#000000";
+                }
+            });
+            p.color = "#000000";
+            this.blackoutParameters.set(i, p);
+        }
+        const presets = {
+            0: 51,
+            1: 52,
+            2: 53,
+            4: 56,
+            5: 57,
+            6: 58,
+        };
+        for (let i = 0; i < 40; i++) {
+            const p = new NumberParameter(presets[i] || null, 1, 512, 1, v4(), (v) => {
+                this.currentChannels.set(i, v.value);
+            });
+            this.keyParameters.set(i, p);
+        }
+        for (let i = 0; i < 40; i++) {
+            const p = new NumberParameter(0, 0, 255, 1, v4(), (v) => {
+                const channel = this.currentChannels.get(i);
+                if (channel !== undefined) {
+                    this.dmx.update(this.universe, {
+                        [channel]: v.value,
+                    });
+                }
+            });
+            this.valueParameters.set(i, p);
+        }
     }
     
     public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> {
         const parameters = new Map<number, Parameter<any>>();
         if (zoneConfig.id == Zone.BLACKOUT) {
-            for (let i = 0; i < 40; i++) {
-                const p = new BooleanParameter(false, v4(), (v) => {
-                    if (v.value == true) {
-                        p.color = "#ffffff";
-                    } else {
-                        p.color = "#000000";
-                    }
-                });
-                p.color = "#000000";
-                parameters.set(i, p);
-            }
+            return this.blackoutParameters;
         } else if (zoneConfig.id == Zone.KEYS) {
-            const presets = {
-                0: 51,
-                1: 52,
-                2: 53,
-                4: 56,
-                5: 57,
-                6: 58,
-            };
-            for (let i = 0; i < 40; i++) {
-                const p = new NumberParameter(presets[i] || null, 1, 512, 1, v4(), (v) => {
-                    this.currentChannels.set(i, v.value);
-                });
-                parameters.set(i, p);
-            }
+            return this.keyParameters;
         } else if (zoneConfig.id == Zone.VALUES) {
-            for (let i = 0; i < 40; i++) {
-                const p = new NumberParameter(0, 0, 255, 1, v4(), (v) => {
-                    const channel = this.currentChannels.get(i);
-                    if (channel !== undefined) {
-                        this.dmx.update(this.universe, {
-                            [channel]: v.value,
-                        });
-                    }
-                });
-                parameters.set(i, p);
-            }
+            return this.valueParameters;
         }
         return parameters;
     }
