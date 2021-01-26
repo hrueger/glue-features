@@ -1,11 +1,13 @@
-import { Feature, ZoneConfig, HWWidgetType } from "@makeproaudio/glue-feature-tools";
+import { Feature, ZoneConfig, HWWidgetType, SingleListSelector } from "@makeproaudio/glue-feature-tools";
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
-import { Parameter, setSynapsesManager, NumberParameter, SuperParameter, ParameterType } from "@makeproaudio/parameters-js";
+import { Parameter, setSynapsesManager, NumberParameter, SuperParameter, ParameterType, BooleanParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
+import * as OBSControl from "obs-websocket-js";
 
 enum ZoneId {
     SCENES = "SCENES",
-    AUDIO_MIXER = "AUDIO_MIXER"
+    AUDIO_VOLUME = "AUDIO_VOLUME",
+    AUDIO_MUTED = "AUDIO_MUTED",
 }
 
 export default class OBSControlFeature implements Feature {
@@ -19,35 +21,145 @@ export default class OBSControlFeature implements Feature {
         },
         {
             color: "#fcd303",
-            id: ZoneId.AUDIO_MIXER,
-            name: "Audio Mixer",
+            id: ZoneId.AUDIO_VOLUME,
+            name: "Volume Mixer",
             description: "This zone is used for the volume of all audio devices",
             widgetTypes: [HWWidgetType.ENCODER, HWWidgetType.MOTORFADER],
         },
+        {
+            color: "#fc9803",
+            id: ZoneId.AUDIO_MUTED,
+            name: "Muted",
+            description: "This zone is used for the muted state of all audio devices",
+            widgetTypes: [HWWidgetType.LEDBUTTON],
+        },
     ];
     private registry: Registry;
-    private audioMixerParameters: Map<number, Parameter<any>>;
+    private audioVolumeParameters: Map<number, NumberParameter>;
+    private audioMutedParameters: Map<number, BooleanParameter>;
+    private sceneSelector: SingleListSelector;
+    private scenes: OBSControl.Scene[];
+
+    private studioMode = false;
+
+    private ignoreVolumeChanges: number = 0;
+    private ignoreMutedChanges: number = 0;
 
     public constructor(settings: any, registry: Registry, synapsesManager: any) {
+        super();
         setSynapsesManager(synapsesManager);
         this.registry = registry;
         console.log("OBS-Control Feature initialized");
-        this.audioMixerParameters = new Map<number, Parameter<any>>();
-        for (let i = 0; i < 40; i++) {
-            const p = new NumberParameter(100, 0, 100, 1, v4(), (e) => console.log("audioMixer:", e.value));
-            this.audioMixerParameters.set(i, p);
-        }
+
+        const obs = new OBSControl();
+        obs.connect({ address: "127.0.0.1:4444", password: "12345678" }).then(() => {
+            return obs.send("GetStudioModeStatus")
+        }).then((s) => {
+            this.studioMode = s["studio-mode"];
+            obs.on("StudioModeSwitched", (s) => {
+                this.studioMode = s["new-state"];
+            })
+            return obs.send("GetSceneList")
+        }).then((t) => {
+            this.setScenes(t);
+            
+            obs.on("SwitchScenes", (e) => {
+                if (!this.studioMode) {
+                    this.selectSceneByName(e["scene-name"]);
+                }
+            });
+            obs.on("PreviewSceneChanged", (e) => {
+                if (this.studioMode) {
+                    this.selectSceneByName(e["scene-name"]);
+                }
+            });
+            obs.on("ScenesChanged", () => {
+                obs.send("GetSceneList").then((t) => {
+                    this.setScenes(t);
+                });
+            });
+            return obs.send("GetSourcesList")
+        }).then(async (t) => {
+            const sources = t.sources as unknown as { name: string, type: string, typeId: string }[];
+            for (let i = 0; i < sources.length; i++) {
+                const data = await obs.send("GetVolume", { source: sources[i].name });
+            
+                console.log(data.volume);
+
+                const p = new NumberParameter(data.volume, 0, 1, 0.00001, v4(), (e) => {
+                    this.ignoreVolumeChanges++;
+                    obs.send("SetVolume", { source: sources[i].name, volume: e.value });
+                });
+                p.setMetadata("name", data.name);
+                this.audioVolumeParameters.set(i, p);
+                
+                const q = new BooleanParameter(data.muted, v4(), (e) => {
+                    q.color = e.value ? "#ff0000" : "#00ff00";
+                    this.ignoreMutedChanges++;
+                    obs.send("SetMute", { source: sources[i].name, mute: e.value });
+                });
+                q.color = data.muted ? "#ff0000" : "#00ff00";
+                q.setMetadata("name", data.name);
+                this.audioMutedParameters.set(i, q);
+            }
+            
+            obs.on("SourceVolumeChanged", (e) => {
+                if (this.ignoreVolumeChanges > 0) {
+                    this.ignoreVolumeChanges--;
+                } else {
+                    for (const [i, p] of this.audioVolumeParameters) {
+                        if (p.getMetadata("name") == e.sourceName) {
+                            p.value = e.volume;
+                        }
+                    }
+                }
+            });
+            obs.on("SourceMuteStateChanged", (e) => {
+                if (this.ignoreMutedChanges > 0) {
+                    this.ignoreMutedChanges--;
+                } else {
+                    for (const [i, p] of this.audioMutedParameters) {
+                        if (p.getMetadata("name") == e.sourceName) {
+                            p.value = e.muted;
+                        }
+                    }
+                }
+            });
+        }, (e) => console.error(e));
+
+        this.sceneSelector = new SingleListSelector([]);
+        this.sceneSelector.on("selected", (i) => {
+            if (this.studioMode) {
+                obs.send("SetPreviewScene", { "scene-name": i.id });
+            } else {
+                obs.send("SetCurrentScene", { "scene-name": i.id });
+            }
+        });
+
+        this.audioVolumeParameters = new Map<number, Parameter<any>>();
+        this.audioMutedParameters = new Map<number, Parameter<any>>();
+    }
+
+    private setScenes(t: { messageId: string; status: "ok"; "current-scene": string; scenes: OBSControl.Scene[]; }) {
+        this.sceneSelector.updateItems(t.scenes.map((s) => ({ id: s.name, hue: 30 })));
+        this.scenes = t.scenes;
+        this.selectSceneByName(t["current-scene"]);
+    }
+
+    public selectSceneByName(name: string) {
+        this.sceneSelector.selectItem(this.scenes.findIndex((s) => s.name == name));
     }
     
     public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> {
-        if (zoneConfig.id == ZoneId.AUDIO_MIXER) {
-            return this.audioMixerParameters;
+        if (zoneConfig.id == ZoneId.AUDIO_VOLUME) {
+            console.log(this.audioVolumeParameters.size);
+            return this.audioVolumeParameters;
+        } else if (zoneConfig.id == ZoneId.AUDIO_MUTED) {
+            return this.audioMutedParameters;
+        } else if (zoneConfig.id == ZoneId.SCENES) {
+            return this.sceneSelector.parameters;
         }
         return new Map<number, Parameter<any>>();
-    }
-    
-    public removeZone(zoneConfig: ZoneConfig, parameters: Map<number, Parameter<any>>): void {
-        // throw new Error("Method not implemented.");
     }
 
 
