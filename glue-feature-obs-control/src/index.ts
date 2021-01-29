@@ -2,6 +2,7 @@ import { Feature, ZoneConfig, HWWidgetType, SingleListSelector } from "@makeproa
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
 import { Parameter, setSynapsesManager, NumberParameter, SuperParameter, ParameterType, BooleanParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
+import { EventEmitter } from "events";
 import * as OBSControl from "obs-websocket-js";
 
 enum ZoneId {
@@ -10,7 +11,7 @@ enum ZoneId {
     AUDIO_MUTED = "AUDIO_MUTED",
 }
 
-export default class OBSControlFeature implements Feature {
+export default class OBSControlFeature extends EventEmitter implements Feature {
     public readonly zones: ZoneConfig[] = [
         {
             color: "#03b5fc",
@@ -44,6 +45,8 @@ export default class OBSControlFeature implements Feature {
 
     private ignoreVolumeChanges: number = 0;
     private ignoreMutedChanges: number = 0;
+    resolveParamPromise: () => void;
+    private allParametersLoaded = false;
 
     public constructor(settings: any, registry: Registry, synapsesManager: any) {
         super();
@@ -125,6 +128,8 @@ export default class OBSControlFeature implements Feature {
                     }
                 }
             });
+            this.allParametersLoaded = true;
+            this.resolveParamPromise?.();
         }, (e) => console.error(e));
 
         this.sceneSelector = new SingleListSelector([]);
@@ -150,9 +155,14 @@ export default class OBSControlFeature implements Feature {
         this.sceneSelector.selectItem(this.scenes.findIndex((s) => s.name == name));
     }
     
-    public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> {
+    public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> | Promise<Map<number, Parameter<any>>> {
+        if (!this.allParametersLoaded) {
+            return new Promise((resolve) => {
+                this.resolveParamPromise = () => resolve(this.giveParametersForZone(zoneConfig));
+            });
+        }
         if (zoneConfig.id == ZoneId.AUDIO_VOLUME) {
-            console.log(this.audioVolumeParameters.size);
+            console.log();
             return this.audioVolumeParameters;
         } else if (zoneConfig.id == ZoneId.AUDIO_MUTED) {
             return this.audioMutedParameters;

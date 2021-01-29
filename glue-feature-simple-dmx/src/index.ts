@@ -3,6 +3,7 @@ import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/regis
 import { Parameter, setSynapsesManager, BooleanParameter, NumberParameter } from "@makeproaudio/parameters-js";
 import * as DMX from "dmx";
 import { v4 } from "uuid";
+import { EventEmitter } from "events";
 
 enum Zone {
     BLACKOUT = "BLACKOUT",
@@ -10,7 +11,7 @@ enum Zone {
     VALUES = "VALUES",
 }
 
-export default class SimpleDmxFeature implements Feature { // extends EventEmitter
+export default class SimpleDmxFeature extends EventEmitter implements Feature {
     public readonly zones: ZoneConfig[] = [
         {
             color: "#000000",
@@ -43,6 +44,7 @@ export default class SimpleDmxFeature implements Feature { // extends EventEmitt
     private valueParameters: Map<number, Parameter<any>> = new Map<number, Parameter<any>>();
 
     public constructor(settings: any, registry: Registry, synapsesManager: any) {
+        super();
         // super();
         setSynapsesManager(synapsesManager);
         this.registry = registry;
@@ -100,10 +102,6 @@ export default class SimpleDmxFeature implements Feature { // extends EventEmitt
             return this.valueParameters;
         }
         return parameters;
-    }
-    
-    public removeZone(zoneConfig: ZoneConfig, parameters: Map<number, Parameter<any>>): void {
-        // throw new Error("Method not implemented.");
     }
 
 

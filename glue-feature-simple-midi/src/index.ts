@@ -3,12 +3,13 @@ import { BooleanParameter, Parameter, setSynapsesManager } from "@makeproaudio/p
 import { v4 } from "uuid";
 import * as midi from "easymidi";
 import { Feature, ZoneConfig, HWWidgetType } from "@makeproaudio/glue-feature-tools";
+import { EventEmitter } from "events";
 
 enum Zone {
     TEST = "TEST"
 }
 
-export default class MidiFeature implements Feature {
+export default class MidiFeature extends EventEmitter implements Feature {
     public readonly zones: ZoneConfig[] = [
         {
             color: "#f5425a",
@@ -23,6 +24,7 @@ export default class MidiFeature implements Feature {
     private parameters = new Map<number, Parameter<any>>();
 
     public constructor(settings: any, registry: Registry, synapsesManager: any) {
+        super();
         setSynapsesManager(synapsesManager);
         this.registry = registry;
         const outputs = midi.getOutputs();
@@ -90,10 +92,6 @@ export default class MidiFeature implements Feature {
     
     public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> {
         return this.parameters;
-    }
-    
-    public removeZone(zoneConfig: ZoneConfig, parameters: Map<number, Parameter<any>>): void {
-        // throw new Error("Method not implemented.");
     }
 
 

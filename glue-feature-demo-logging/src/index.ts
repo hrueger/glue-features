@@ -1,6 +1,7 @@
-import { Feature, FeatureSetting, ZoneConfig, SelectionItem } from "@makeproaudio/glue-feature-tools";
-import { NumberParameter, Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
-import { v4 } from "uuid";
+import { Feature, FeatureSetting, ZoneConfig, SingleListSelector } from "@makeproaudio/glue-feature-tools";
+import { FeatureEvents } from "@makeproaudio/glue-feature-tools/dist/_models/Feature";
+import { Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
+import { EventEmitter } from "events";
 
 export type NavigatorSelectionItem = {
     title: string;
@@ -10,85 +11,48 @@ export type NavigatorSelectionItem = {
 }
 
 
-export default class MyFeature implements Feature {
+export default class DemoLoggingFeature extends EventEmitter implements Feature {
     public zones: ZoneConfig[] = [];
-    public navigatorSelectionItems: NavigatorSelectionItem[] = [
-        {
-            color: "#ffffff",
-            id: "item1",
-            title: "Test Item 1",
-            children: [
-                {
-                    id: "i1child1",
-                    color: "#ff0000",
-                    title: "Child 1 of item 1",
-                },
-                {
-                    id: "i1child2",
-                    color: "#ff0000",
-                    title: "Child 2 of item 1",
-                },
-            ],
-        },
-        {
-            color: "#ffffff",
-            id: "item2",
-            title: "Test Item 2",
-        },
-        {
-            color: "#ffffff",
-            id: "item3",
-            title: "Test Item 3",
-            children: [
-                {
-                    id: "i3child1",
-                    color: "#2be0d7",
-                    title: "Child 1 of item 3",
-                },
-                {
-                    id: "i3child2",
-                    color: "#2be0d7",
-                    title: "Child 2 of item 3",
-                },
-                {
-                    id: "i3child3",
-                    color: "#2be0d7",
-                    title: "Child 3 of item 3",
-                },
-                {
-                    id: "i3child4",
-                    color: "#2be0d7",
-                    title: "Child 4 of item 3",
-                    children: [
-                        {
-                            id: "i3child4child1",
-                            color: "#b9e02b",
-                            title: "Child 1 of child 4 of item 3",
-                        },
-                        {
-                            id: "i3child4child2",
-                            color: "#b9e02b",
-                            title: "Child 2 of child 4 of item 3",
-                        },
-                        {
-                            id: "i3child4child3",
-                            color: "#b9e02b",
-                            title: "Child 3 of child 4 of item 3",
-                        },
-                        {
-                            id: "i3child4child4",
-                            color: "#b9e02b",
-                            title: "Child 4 of child 4 of item 3",
-                        },
-                    ],
-                },
-            ],
-        },
-    ];
     private parameters: Parameter<any>[] = [];
+    private synthSelector: SingleListSelector;
+    private prodysseySectionSelector: SingleListSelector;
+    private minimaxSectionSelector: SingleListSelector;
+    private pro12SectionSelector: SingleListSelector;
+    private selectedSynth: string;
 
     public constructor(settings: FeatureSetting, registry: any, synapsesManager: any) {
+        super();
         setSynapsesManager(synapsesManager);
+        this.synthSelector = new SingleListSelector([
+            { id: "prodyssey", hue: 50, },
+            { id: "minimax", hue: 100, },
+            { id: "pro12", hue: 150, },
+        ]);
+        this.synthSelector.on("selected", (i) => {
+            console.log("Synth", i.id, "was selected");
+            this.selectedSynth = i.id;
+            this.emit(FeatureEvents.UPDATE_NAVIGATOR_SELECTION, 2);
+        })
+        this.prodysseySectionSelector = new SingleListSelector([
+            { id: "oscillators", hue: 1, },
+            { id: "filters", hue: 1, },
+            { id: "effects", hue: 1, },
+        ]);
+        this.minimaxSectionSelector = new SingleListSelector([
+            { id: "oscillators", hue: 1, },
+            { id: "filters", hue: 1, },
+            { id: "effects", hue: 1, },
+        ]);
+        this.pro12SectionSelector = new SingleListSelector([
+            { id: "oscillators", hue: 1, },
+            { id: "filters", hue: 1, },
+            { id: "effects", hue: 1, },
+        ]);
+        for (const s of [this.pro12SectionSelector, this.minimaxSectionSelector, this.pro12SectionSelector]) {
+            s.on("selected", (i) => {
+                console.log("Section", i.id, "was selected");
+            });
+        }
     }
 
     public init?(): void {
@@ -103,37 +67,26 @@ export default class MyFeature implements Feature {
         return new Map();
     }
 
-    public onNavigatorSelection(item) {
-        console.log("This item was selected:", item.id);
-    }
-
-    public onNavigatorFeatureSelected(mappings: Map<number, Map<number, Parameter<any>>>) {
-        console.log("---- adding parameters to mapping");
-        for (const [mappingId, parameters] of mappings) {
-            for (const [index, parameter] of parameters) {
-                const p = new NumberParameter(0, 0, 100, 1, v4());
-                p.bindFrom(parameter, (e) => console.log("received an update:", e.value));
-                this.parameters.push(p);
-            }
-        }
-    }
-    public onNavigatorFeatureDeselected(mappings: Map<number, Map<number, Parameter<any>>>) {
-        console.log("removing parameters from mapping");
-        for (const p of this.parameters) {
-            p.unbind();
+    public giveParametersForNavigatorSelection?(selection: 1 | 2 | 3): Map<number, Parameter<any>> | false {
+        switch (selection) {
+            case 1:
+                return this.synthSelector.parameters;
+            case 2:
+                switch (this.selectedSynth) {
+                    case "prodyssey":
+                        return this.prodysseySectionSelector.parameters;
+                    case "pro12":
+                        return this.pro12SectionSelector.parameters;
+                    case "minimax":
+                        return this.minimaxSectionSelector.parameters;
+                    default:
+                        return this.prodysseySectionSelector.parameters;
+                }
         }
     }
 
-    public removeZone(zoneConfig: ZoneConfig, parameters: Map<number, Parameter<any>>): void {
-        //
-    }
-
-    public takeSelectorForZone?(zoneConfig: ZoneConfig, selector: any): void {
-        //
-    }
-
-    public getSelectionItems?(zoneConfig: ZoneConfig): SelectionItem[] {
-        return [];
+    public giveParametersForNavigatorMapping?(mapping: 1 | 2 | 3 | 4 | 5): Map<number, Parameter<any>> | false {
+        return false;
     }
 
     public onSettingsChange?(settings: FeatureSetting): void {
