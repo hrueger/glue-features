@@ -86,8 +86,6 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
             const sources = t.sources as unknown as { name: string, type: string, typeId: string }[];
             for (let i = 0; i < sources.length; i++) {
                 const data = await obs.send("GetVolume", { source: sources[i].name });
-            
-                console.log(data.volume);
 
                 const p = new NumberParameter(data.volume, 0, 1, 0.00001, v4(), (e) => {
                     this.ignoreVolumeChanges++;
@@ -162,7 +160,6 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
             });
         }
         if (zoneConfig.id == ZoneId.AUDIO_VOLUME) {
-            console.log();
             return this.audioVolumeParameters;
         } else if (zoneConfig.id == ZoneId.AUDIO_MUTED) {
             return this.audioMutedParameters;
