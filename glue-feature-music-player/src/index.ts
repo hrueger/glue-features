@@ -56,6 +56,9 @@ export default class MusicPlayerFeature extends EventEmitter implements Feature 
                     const p = new NumberParameter(0, 0, 100, 1, v4(), (e) => {
                         console.log(category.id, "mapping", i, "parameter", j, "updated to", e.value);
                     });
+                    p.color = "#ff0000";
+                    p.label = "MusicPlayer";
+                    p.setMetadata("context", category.id);
                     paramMap.set(j, p);
                 }
                 categoryParams.set(i, paramMap);
@@ -89,7 +92,6 @@ export default class MusicPlayerFeature extends EventEmitter implements Feature 
             const p = new NumberParameter(50, 0, 100, 1, v4(), (evt) => {
                 if (evt.value < 33) {
                     p.color = "#00ff00";
-                    p.setMetadata("color", "#ffffff");
                 } else if (evt.value < 66) {
                     p.color = "#ffff00";
                 } else {

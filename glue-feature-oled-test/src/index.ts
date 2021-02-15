@@ -58,7 +58,6 @@ export default class OLEDTestFeature extends EventEmitter implements Feature {
             if (e == "NEW_MATCH") {
                 for (const obj of r) {
                     const tile = obj.objectReference;
-                    console.log('found tile');
                     this.widgets = tile.widgets;
                 }
             }
@@ -75,6 +74,9 @@ export default class OLEDTestFeature extends EventEmitter implements Feature {
     }
 
     private toggleLayoutFast() {
+        if (!this.widgets) {
+            return;
+        }
         this.layout++;
         if (this.layout > 4) {
             this.layout = 1;
@@ -86,6 +88,9 @@ export default class OLEDTestFeature extends EventEmitter implements Feature {
     }
 
     private toggleLayoutSlow() {
+        if (!this.widgets) {
+            return;
+        }
         this.layout++;
         if (this.layout > 4) {
             this.layout = 1;

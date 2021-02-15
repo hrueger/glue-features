@@ -74,9 +74,12 @@ export default class SimpleDmxFeature extends EventEmitter implements Feature {
             6: 58,
         };
         for (let i = 0; i < 40; i++) {
-            const p = new NumberParameter(presets[i] || null, 1, 512, 1, v4(), (v) => {
+            const p = new NumberParameter(presets[i] || 0, 1, 512, 1, v4(), (v) => {
                 this.currentChannels.set(i, v.value);
             });
+            p.color = "#0000ff";
+            p.label = "Simple DMX";
+            p.setMetadata("context", "Keys");
             this.keyParameters.set(i, p);
         }
         for (let i = 0; i < 40; i++) {
@@ -88,6 +91,9 @@ export default class SimpleDmxFeature extends EventEmitter implements Feature {
                     });
                 }
             });
+            p.color = "#00ffff";
+            p.label = "Simple DMX";
+            p.setMetadata("context", "Values");
             this.valueParameters.set(i, p);
         }
     }

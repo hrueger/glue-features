@@ -5,3 +5,4 @@ for /D %%G in (".\glue-feature-*") DO (
     call %~1
     cd ..
 )
+@echo on

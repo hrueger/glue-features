@@ -91,6 +91,9 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
                     this.ignoreVolumeChanges++;
                     obs.send("SetVolume", { source: sources[i].name, volume: e.value });
                 });
+                p.color = "#fcd303";
+                p.label = "OBS Control";
+                p.setMetadata("context", "Volume");
                 p.setMetadata("name", data.name);
                 this.audioVolumeParameters.set(i, p);
                 
@@ -99,6 +102,8 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
                     this.ignoreMutedChanges++;
                     obs.send("SetMute", { source: sources[i].name, mute: e.value });
                 });
+                p.label = "OBS Control";
+                p.setMetadata("context", "Muted State");
                 q.color = data.muted ? "#ff0000" : "#00ff00";
                 q.setMetadata("name", data.name);
                 this.audioMutedParameters.set(i, q);
