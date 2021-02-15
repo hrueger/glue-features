@@ -1,6 +1,6 @@
 {
   "name": "@hrueger/glue-feature-simple-dmx",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "scripts": {
     "build:core": "tsc -b tsconfig.json",
     "build": "npm run build:core",
