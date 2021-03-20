@@ -23,30 +23,30 @@ export default class DemoLoggingFeature extends EventEmitter implements Feature 
     public constructor(settings: FeatureSetting, registry: any, synapsesManager: any) {
         super();
         setSynapsesManager(synapsesManager);
-        this.synthSelector = new SingleListSelector([
-            { id: "prodyssey", hue: 50, },
-            { id: "minimax", hue: 100, },
-            { id: "pro12", hue: 150, },
+        this.synthSelector = new SingleListSelector("Synths", [
+            { id: "prodyssey", name: "Prodyssey", hue: 50, },
+            { id: "minimax", name: "pinimax", hue: 100, },
+            { id: "pro12", name: "Pro12", hue: 150, },
         ]);
         this.synthSelector.on("selected", (i) => {
             console.log("Synth", i.id, "was selected");
             this.selectedSynth = i.id;
             this.emit(FeatureEvents.UPDATE_NAVIGATOR_SELECTION, 2);
         })
-        this.prodysseySectionSelector = new SingleListSelector([
-            { id: "oscillators", hue: 1, },
-            { id: "filters", hue: 1, },
-            { id: "effects", hue: 1, },
+        this.prodysseySectionSelector = new SingleListSelector("Sections", [
+            { id: "oscillators", name: "Oscillators", hue: 1, },
+            { id: "filters", name: "Filters", hue: 1, },
+            { id: "effects", name: "Effects", hue: 1, },
         ]);
-        this.minimaxSectionSelector = new SingleListSelector([
-            { id: "oscillators", hue: 1, },
-            { id: "filters", hue: 1, },
-            { id: "effects", hue: 1, },
+        this.minimaxSectionSelector = new SingleListSelector("Sections", [
+            { id: "oscillators", name: "Oscillators", hue: 1, },
+            { id: "filters", name: "Filters", hue: 1, },
+            { id: "effects", name: "Effects", hue: 1, },
         ]);
-        this.pro12SectionSelector = new SingleListSelector([
-            { id: "oscillators", hue: 1, },
-            { id: "filters", hue: 1, },
-            { id: "effects", hue: 1, },
+        this.pro12SectionSelector = new SingleListSelector("Sections", [
+            { id: "oscillators", name: "Oscillators", hue: 1, },
+            { id: "filters", name: "Filters", hue: 1, },
+            { id: "effects", name: "Effects", hue: 1, },
         ]);
         for (const s of [this.pro12SectionSelector, this.minimaxSectionSelector, this.pro12SectionSelector]) {
             s.on("selected", (i) => {

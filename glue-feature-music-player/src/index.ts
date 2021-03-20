@@ -1,7 +1,7 @@
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
-import { Parameter, setSynapsesManager, NumberParameter } from "@makeproaudio/parameters-js";
+import { Parameter, setSynapsesManager, ContinuousParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
-import { CustomSelectionMode, CustomSelector, Feature, HWWidgetType, SelectionMode, SingleListSelector, ZoneConfig } from "@makeproaudio/glue-feature-tools";
+import { CustomSelectionMode, CustomSelector, Feature, HWWidgetType, SingleListSelector, ZoneConfig } from "@makeproaudio/glue-feature-tools";
 import { EventEmitter } from "events";
 import { FeatureEvents } from "@makeproaudio/glue-feature-tools/dist/_models/Feature";
 
@@ -38,11 +38,11 @@ export default class MusicPlayerFeature extends EventEmitter implements Feature 
         this.registry = registry;
         console.log("Music Player Feature initialized");
         const categories = [
-            { id: "sounds", hue: 200, },
-            { id: "fx", hue: 250, },
-            { id: "drumset", hue: 300, },
+            { id: "sounds", name: "Sounds", hue: 200, },
+            { id: "fx", name: "FX", hue: 250, },
+            { id: "drumset", name: "Drumset", hue: 300, },
         ];
-        this.categoriesSelector = new SingleListSelector(categories);
+        this.categoriesSelector = new SingleListSelector("Categories", categories);
         this.categoriesSelector.on("selected", (c) => {
             this.currentCategory = c.id;
             this.emit(FeatureEvents.UPDATE_NAVIGATOR_MAPPING);
@@ -53,7 +53,7 @@ export default class MusicPlayerFeature extends EventEmitter implements Feature 
             for (let i = 1; i <= 5; i++) {
                 const paramMap = new Map<number, Parameter<any>>();
                 for (let j = 0; j < 4; j++) {
-                    const p = new NumberParameter(0, 0, 100, 1, v4(), (e) => {
+                    const p = new ContinuousParameter(0, 0, 100, 1, v4(), (e) => {
                         console.log(category.id, "mapping", i, "parameter", j, "updated to", e.value);
                     });
                     p.color = "#ff0000";
@@ -66,11 +66,12 @@ export default class MusicPlayerFeature extends EventEmitter implements Feature 
             this.allParameters.set(category.id, categoryParams);
         }
 
-        this.controlsSelector = new CustomSelector([
+        this.controlsSelector = new CustomSelector("Controls", [
             {
                 colorInactive: "#333333",
                 colorActive: "#ffffff",
                 id: "back",
+                name: "Back",
                 mode: CustomSelectionMode.MOMENTARY,
             },
             {
@@ -79,17 +80,19 @@ export default class MusicPlayerFeature extends EventEmitter implements Feature 
                 id: "playpause",
                 mode: CustomSelectionMode.LATCHING,
                 selected: false,
+                name: "Play / Pause",
             },
             {
                 colorInactive: "#333333",
                 colorActive: "#ffffff",
                 id: "forward",
                 mode: CustomSelectionMode.MOMENTARY,
+                name: "Forward",
             },
         ]);
         this.equalizerParameters = new Map<number, Parameter<any>>();
         for (let i = 0; i < 40; i++) {
-            const p = new NumberParameter(50, 0, 100, 1, v4(), (evt) => {
+            const p = new ContinuousParameter(50, 0, 100, 1, v4(), (evt) => {
                 if (evt.value < 33) {
                     p.color = "#00ff00";
                 } else if (evt.value < 66) {

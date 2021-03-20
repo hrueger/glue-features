@@ -1,6 +1,6 @@
 import { Feature, ZoneConfig, HWWidgetType, SingleListSelector } from "@makeproaudio/glue-feature-tools";
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
-import { Parameter, setSynapsesManager, NumberParameter, SuperParameter, ParameterType, BooleanParameter } from "@makeproaudio/parameters-js";
+import { Parameter, setSynapsesManager, ContinuousParameter, SwitchParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 import { EventEmitter } from "events";
 import * as OBSControl from "obs-websocket-js";
@@ -36,8 +36,8 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
         },
     ];
     private registry: Registry;
-    private audioVolumeParameters: Map<number, NumberParameter>;
-    private audioMutedParameters: Map<number, BooleanParameter>;
+    private audioVolumeParameters: Map<number, ContinuousParameter>;
+    private audioMutedParameters: Map<number, SwitchParameter>;
     private sceneSelector: SingleListSelector;
     private scenes: OBSControl.Scene[];
 
@@ -86,8 +86,7 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
             const sources = t.sources as unknown as { name: string, type: string, typeId: string }[];
             for (let i = 0; i < sources.length; i++) {
                 const data = await obs.send("GetVolume", { source: sources[i].name });
-
-                const p = new NumberParameter(data.volume, 0, 1, 0.00001, v4(), (e) => {
+                const p = new ContinuousParameter(data.volume, 0, 1, 0.00001, v4(), (e) => {
                     this.ignoreVolumeChanges++;
                     obs.send("SetVolume", { source: sources[i].name, volume: e.value });
                 });
@@ -97,7 +96,7 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
                 p.setMetadata("name", data.name);
                 this.audioVolumeParameters.set(i, p);
                 
-                const q = new BooleanParameter(data.muted, v4(), (e) => {
+                const q = new SwitchParameter(data.muted, v4(), (e) => {
                     q.color = e.value ? "#ff0000" : "#00ff00";
                     this.ignoreMutedChanges++;
                     obs.send("SetMute", { source: sources[i].name, mute: e.value });
@@ -135,7 +134,7 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
             this.resolveParamPromise?.();
         }, (e) => console.error(e));
 
-        this.sceneSelector = new SingleListSelector([]);
+        this.sceneSelector = new SingleListSelector("Scenes", []);
         this.sceneSelector.on("selected", (i) => {
             if (this.studioMode) {
                 obs.send("SetPreviewScene", { "scene-name": i.id });
@@ -149,7 +148,7 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
     }
 
     private setScenes(t: { messageId: string; status: "ok"; "current-scene": string; scenes: OBSControl.Scene[]; }) {
-        this.sceneSelector.updateItems(t.scenes.map((s) => ({ id: s.name, hue: 30 })));
+        this.sceneSelector.updateItems(t.scenes.map((s) => ({ id: s.name, hue: 30, name: s.name })));
         this.scenes = t.scenes;
         this.selectSceneByName(t["current-scene"]);
     }

@@ -1,6 +1,6 @@
 import { Feature, ZoneConfig, HWWidgetType } from "@makeproaudio/glue-feature-tools";
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
-import { Parameter, setSynapsesManager, BooleanParameter, NumberParameter } from "@makeproaudio/parameters-js";
+import { ContinuousParameter, Parameter, setSynapsesManager, SwitchParameter } from "@makeproaudio/parameters-js";
 import * as DMX from "dmx";
 import { v4 } from "uuid";
 import { EventEmitter } from "events";
@@ -55,7 +55,7 @@ export default class SimpleDmxFeature extends EventEmitter implements Feature {
         this.dmx.addUniverse(this.universe, "enttec-usb-dmx-pro", "COM5");
 
         for (let i = 0; i < 40; i++) {
-            const p = new BooleanParameter(false, v4(), (v) => {
+            const p = new SwitchParameter(false, v4(), (v) => {
                 if (v.value == true) {
                     p.color = "#ffffff";
                 } else {
@@ -74,7 +74,7 @@ export default class SimpleDmxFeature extends EventEmitter implements Feature {
             6: 58,
         };
         for (let i = 0; i < 40; i++) {
-            const p = new NumberParameter(presets[i] || 0, 1, 512, 1, v4(), (v) => {
+            const p = new ContinuousParameter(presets[i] || 0, 1, 512, 1, v4(), (v) => {
                 this.currentChannels.set(i, v.value);
             });
             p.color = "#0000ff";
@@ -83,7 +83,7 @@ export default class SimpleDmxFeature extends EventEmitter implements Feature {
             this.keyParameters.set(i, p);
         }
         for (let i = 0; i < 40; i++) {
-            const p = new NumberParameter(0, 0, 255, 1, v4(), (v) => {
+            const p = new ContinuousParameter(0, 0, 255, 1, v4(), (v) => {
                 const channel = this.currentChannels.get(i);
                 if (channel !== undefined) {
                     this.dmx.update(this.universe, {

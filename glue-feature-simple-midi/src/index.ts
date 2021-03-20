@@ -1,5 +1,5 @@
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
-import { BooleanParameter, Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
+import { Parameter, setSynapsesManager, SwitchParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 import * as midi from "easymidi";
 import { Feature, ZoneConfig, HWWidgetType } from "@makeproaudio/glue-feature-tools";
@@ -67,7 +67,7 @@ export default class MidiFeature extends EventEmitter implements Feature {
         const notes = naturals;
         for (const [idx, note] of Object.entries(notes)) {
             let index = parseInt(idx, 10);
-            const p = new BooleanParameter(false, v4(), (evt) => {
+            const p = new SwitchParameter(false, v4(), (evt) => {
                 if (evt.value == true) {
                     p.color = "#ffffff";
                     this.midi.send("noteon", {

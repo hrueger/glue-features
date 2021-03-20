@@ -1,4 +1,4 @@
-import { Parameter, setSynapsesManager, NumberParameter } from "@makeproaudio/parameters-js";
+import { ContinuousParameter, Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 import { Feature, HWWidgetType, ZoneConfig } from "@makeproaudio/glue-feature-tools";
 import { EventEmitter } from "events";
@@ -34,7 +34,7 @@ export default class OLEDTestFeature extends EventEmitter implements Feature {
         this.fastToggleParams = new Map<number, Parameter<any>>();
         this.slowToggleParams = new Map<number, Parameter<any>>();
         for (let i = 0; i < 40; i++) {
-            const p = new NumberParameter(50, 0, 100, 1, v4(), (evt) => {
+            const p = new ContinuousParameter(50, 0, 100, 1, v4(), (evt) => {
                 this.toggleLayoutFast();
                 p.color = "#ffffff";
                 setTimeout(() => {
@@ -44,7 +44,7 @@ export default class OLEDTestFeature extends EventEmitter implements Feature {
             this.fastToggleParams.set(i, p);
         }
         for (let i = 0; i < 40; i++) {
-            const p = new NumberParameter(50, 0, 100, 1, v4(), (evt) => {
+            const p = new ContinuousParameter(50, 0, 100, 1, v4(), (evt) => {
                 this.toggleLayoutSlow();
                 p.color = "#ffffff";
                 setTimeout(() => {
