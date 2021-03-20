@@ -1,6 +1,6 @@
 {
   "name": "@hrueger/glue-feature-obs-control",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "scripts": {
     "build:core": "tsc -b tsconfig.json",
     "build": "npm run build:core",
