@@ -2,23 +2,28 @@ import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/regis
 import { Parameter, setSynapsesManager, SwitchParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 import * as midi from "easymidi";
-import { Feature, ZoneConfig, HWWidgetType } from "@makeproaudio/glue-feature-tools";
+import { Feature, ZoneConfig } from "@makeproaudio/glue-feature-tools";
 import { EventEmitter } from "events";
+import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
+import { BehaviorSubject } from "rxjs";
+import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
 
 enum Zone {
     TEST = "TEST"
 }
 
 export default class MidiFeature extends EventEmitter implements Feature {
-    public readonly zones: ZoneConfig[] = [
+    public zones: BehaviorSubject<ZoneConfig[]> = new BehaviorSubject<ZoneConfig[]>([
         {
             color: "#f5425a",
             id: Zone.TEST,
             name: "Midi Test",
             description: "This zone is used for Midi Test Buttons",
             widgetTypes: [HWWidgetType.LEDBUTTON],
-        },
-    ];
+        },]);
+    public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
+        FeatureStatus.INITIALIZING,
+    );
     private registry: Registry;
     midi: midi.Output;
     private parameters = new Map<number, Parameter<any>>();
@@ -87,6 +92,8 @@ export default class MidiFeature extends EventEmitter implements Feature {
             this.parameters.set(index, p);
             // parameter.buttonMode = ButtonMode.MOMENTARY;
         }
+        
+        this.status.next(FeatureStatus.OK);
         
     }
     

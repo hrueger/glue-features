@@ -1,12 +1,15 @@
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
 import { Parameter, setSynapsesManager, ContinuousParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
-import { CustomSelectionMode, CustomSelector, Feature, HWWidgetType, SingleListSelector, ZoneConfig } from "@makeproaudio/glue-feature-tools";
+import { CustomSelectionMode, CustomSelector, Feature, SingleListSelector, ZoneConfig } from "@makeproaudio/glue-feature-tools";
 import { EventEmitter } from "events";
-import { FeatureEvents } from "@makeproaudio/glue-feature-tools/dist/_models/Feature";
+import { FeatureEvents } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureEvents";
+import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
+import { BehaviorSubject } from "rxjs";
+import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
 
 export default class MusicPlayerFeature extends EventEmitter implements Feature {
-    public readonly zones: ZoneConfig[] = [
+    public zones: BehaviorSubject<ZoneConfig[]> = new BehaviorSubject<ZoneConfig[]>([
         {
             color: "#ff0000",
             id: "controls",
@@ -21,7 +24,10 @@ export default class MusicPlayerFeature extends EventEmitter implements Feature 
             description: "This zone is used for equalizer encoders / faders like basses, mids, highs, ...",
             widgetTypes: [HWWidgetType.ENCODER, HWWidgetType.MOTORFADER],
         }
-    ];
+    ]);
+    public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
+        FeatureStatus.INITIALIZING,
+    );
     private registry: Registry;
     private equalizerMapper; 
     controlsSelector: CustomSelector;
@@ -103,6 +109,7 @@ export default class MusicPlayerFeature extends EventEmitter implements Feature 
             });
             this.equalizerParameters.set(i, p);
         }
+        this.status.next(FeatureStatus.OK);
     }
 
     public giveParametersForNavigatorSelection?(selection: 1 | 2 | 3): Map<number, Parameter<any>> | false {

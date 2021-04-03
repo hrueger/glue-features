@@ -1,6 +1,6 @@
 {
   "name": "@hrueger/glue-feature-music-player",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "scripts": {
     "build": "npm run build:core && npm run build:ui",
     "build:core": "tsc -b tsconfig.json",
@@ -15,7 +15,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@makeproaudio/glue-feature-tools": "0.0.20",
+    "@makeproaudio/glue-feature-tools": "0.0.27",
     "@makeproaudio/makehaus-nodered-lib": "^1.1.0-beta.31",
     "@makeproaudio/parameters-js": "^1.1.0-beta.13"
   },
@@ -35,7 +35,7 @@
     "core-js": "^3.8.1",
     "karma": "~5.2.3",
     "ng-packagr": "^11.0.3",
-    "rxjs": "~6.6.3",
+    "rxjs": "^6.6.7",
     "typescript": "4.0.3",
     "zone.js": "~0.11.3"
   },

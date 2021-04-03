@@ -1,9 +1,12 @@
-import { Feature, ZoneConfig, HWWidgetType } from "@makeproaudio/glue-feature-tools";
+import { Feature, ZoneConfig } from "@makeproaudio/glue-feature-tools";
 import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
 import { ContinuousParameter, Parameter, setSynapsesManager, SwitchParameter } from "@makeproaudio/parameters-js";
 import * as DMX from "dmx";
 import { v4 } from "uuid";
 import { EventEmitter } from "events";
+import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
+import { BehaviorSubject } from "rxjs";
+import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
 
 enum Zone {
     BLACKOUT = "BLACKOUT",
@@ -12,7 +15,7 @@ enum Zone {
 }
 
 export default class SimpleDmxFeature extends EventEmitter implements Feature {
-    public readonly zones: ZoneConfig[] = [
+    public zones: BehaviorSubject<ZoneConfig[]> = new BehaviorSubject<ZoneConfig[]>([
         {
             color: "#000000",
             id: Zone.BLACKOUT,
@@ -34,7 +37,10 @@ export default class SimpleDmxFeature extends EventEmitter implements Feature {
             description: "This zone is used for the DMX addresses to control",
             widgetTypes: [HWWidgetType.ENCODER],
         },
-    ];
+    ]);
+    public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
+        FeatureStatus.INITIALIZING,
+    );
     private registry: Registry;
     private currentChannels: Map <number, number> = new Map<number, number>();
     dmx: any;
@@ -96,6 +102,8 @@ export default class SimpleDmxFeature extends EventEmitter implements Feature {
             p.setMetadata("context", "Values");
             this.valueParameters.set(i, p);
         }
+        
+        this.status.next(FeatureStatus.OK);
     }
     
     public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> {

@@ -1,7 +1,9 @@
 import { Feature, FeatureSetting, ZoneConfig, SingleListSelector } from "@makeproaudio/glue-feature-tools";
-import { FeatureEvents } from "@makeproaudio/glue-feature-tools/dist/_models/Feature";
+import { FeatureEvents } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureEvents";
+import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
 import { Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
 import { EventEmitter } from "events";
+import { BehaviorSubject } from "rxjs";
 
 export type NavigatorSelectionItem = {
     title: string;
@@ -12,7 +14,10 @@ export type NavigatorSelectionItem = {
 
 
 export default class DemoLoggingFeature extends EventEmitter implements Feature {
-    public zones: ZoneConfig[] = [];
+    public zones: BehaviorSubject<ZoneConfig[]> = new BehaviorSubject<ZoneConfig[]>([]);
+    public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
+        FeatureStatus.INITIALIZING,
+    );
     private parameters: Parameter<any>[] = [];
     private synthSelector: SingleListSelector;
     private prodysseySectionSelector: SingleListSelector;
@@ -53,6 +58,7 @@ export default class DemoLoggingFeature extends EventEmitter implements Feature 
                 console.log("Section", i.id, "was selected");
             });
         }
+        this.status.next(FeatureStatus.OK);
     }
 
     public init?(): void {

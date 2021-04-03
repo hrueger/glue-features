@@ -1,10 +1,13 @@
 import { ContinuousParameter, Parameter, setSynapsesManager } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
-import { Feature, HWWidgetType, ZoneConfig } from "@makeproaudio/glue-feature-tools";
+import { Feature, ZoneConfig } from "@makeproaudio/glue-feature-tools";
 import { EventEmitter } from "events";
+import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
+import { BehaviorSubject } from "rxjs";
+import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
 
 export default class OLEDTestFeature extends EventEmitter implements Feature {
-    public readonly zones: ZoneConfig[] = [
+    public zones: BehaviorSubject<ZoneConfig[]> = new BehaviorSubject<ZoneConfig[]>([
         {
             color: "#34eba4",
             id: "slow",
@@ -18,8 +21,11 @@ export default class OLEDTestFeature extends EventEmitter implements Feature {
             name: "Toggle Fast",
             description: "",
             widgetTypes: [HWWidgetType.LEDBUTTON],
-        }
-    ];
+        },
+    ]);
+    public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
+        FeatureStatus.INITIALIZING,
+    );
     private registry: any;
     fastToggleParams: Map<number, Parameter<any>>;
     slowToggleParams: Map<number, Parameter<any>>;
@@ -64,6 +70,8 @@ export default class OLEDTestFeature extends EventEmitter implements Feature {
         }, "tile", {
             tileType: "4O",
         });
+        
+        this.status.next(FeatureStatus.OK);
     }
 
     giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> {
