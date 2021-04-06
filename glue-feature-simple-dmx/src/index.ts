@@ -58,7 +58,8 @@ export default class SimpleDmxFeature extends EventEmitter implements Feature {
         console.log("got", settings);
         this.dmx = new DMX();
         this.universe = v4();
-        this.dmx.addUniverse(this.universe, "enttec-usb-dmx-pro", "COM5");
+        // ToDo make configurable
+        /* this.dmx.addUniverse(this.universe, "", ""); // enttec-usb-dmx-pro", "COM5
 
         for (let i = 0; i < 40; i++) {
             const p = new SwitchParameter(false, v4(), (v) => {
@@ -102,7 +103,7 @@ export default class SimpleDmxFeature extends EventEmitter implements Feature {
             p.setMetadata("context", "Values");
             this.valueParameters.set(i, p);
         }
-        
+        */
         this.status.next(FeatureStatus.OK);
     }
     
