@@ -109,7 +109,7 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
 
     public init() {
         try {
-            this.obs.connect({ address: "127.0.0.1:4444", password: "12345678" }).then(() => {
+            this.obs.connect({ address: "127.0.0.1:4444", password: "secret" }).then(() => {
                 return this.obs.send("GetStudioModeStatus")
             }).then((s) => {
                 this.studioMode = s["studio-mode"];

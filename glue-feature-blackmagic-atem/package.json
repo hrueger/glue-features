@@ -1,5 +1,5 @@
 {
-  "name": "@hrueger/glue-feature-obs-control",
+  "name": "@hrueger/glue-feature-blackmagic-atem",
   "version": "0.0.6",
   "scripts": {
     "build:core": "tsc -b tsconfig.json",
@@ -14,10 +14,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@makeproaudio/glue-feature-tools": "0.0.27",
-    "@makeproaudio/makehaus-nodered-lib": "^1.1.0-beta.31",
+    "@makeproaudio/glue-feature-tools": "file:../../glue-feature-tools/makeproaudio-glue-feature-tools-0.0.35.tgz",
+    "@makeproaudio/makehaus-nodered-lib": "file:../../makehaus-nodered-lib/makeproaudio-makehaus-nodered-lib-1.1.0-beta.34.tgz",
     "@makeproaudio/parameters-js": "file:../../parameters-js/makeproaudio-parameters-js-1.1.0-beta.18.tgz",
-    "obs-websocket-js": "^4.0.2",
+    "atem-connection": "^2.2.2",
     "rxjs": "^6.6.7",
     "uuid": "^8.3.2"
   },
@@ -27,10 +27,10 @@
     "typescript": "4.0.3"
   },
   "glue": {
-    "name": "OBS Control",
-    "id": "6dd1d0fb-d15c-4d02-9870-9e426f4ba5b3",
-    "color": "#2d2b2e",
-    "copyright": "© 2020, Hannes Rüger",
+    "name": "Blackmagic ATEM",
+    "id": "5f0e66dd-f724-4e42-8d96-c6824f3d8302",
+    "color": "#FFA200",
+    "copyright": "© 2021, Hannes Rüger",
     "simpleConfigUI": {
       "tabs": {
         "general": {
