@@ -15,7 +15,7 @@ enum ZoneId {
 
 const WAITING_TIME = 5000;
 
-const INPUTS: { name: string, number: number }[] = [
+let INPUTS: { name: string, number: number }[] = [
     ...Array(20).fill(null).map((_, i) => ({ name: `Input ${i + 1}`, number: i + 1 })),
     { name: "ColorBars", number: 1000 },
     { name: "Color1", number: 2001 },
@@ -148,7 +148,8 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
             this.atem.connect("192.168.178.23");
             this.atem.on("connected", () => {
 
-                        
+                INPUTS = INPUTS.filter((i) => this.atem.state.inputs[i.number.toString()]);
+
                 this.programInputSelector = new SingleListSelector("Program Bus", INPUTS.map((i) => ({ name: i.name, id: `${i.number}`, hue: 0 })));
                 this.programInputSelector.on("selected", (i) => this.atem.changeProgramInput(Number(i.id)));
                 this.previewInputSelector = new SingleListSelector("Preview Bus", INPUTS.map((i) => ({name: i.name, id: `${i.number}`, hue: 120})));
@@ -157,6 +158,19 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 this.allParametersLoaded = true;
                 this.resolveParamPromise?.();
                 this.status.next(FeatureStatus.OK);
+            });
+            this.atem.on("stateChanged", (state, paths) => {
+                console.log(paths);
+                for (const path of paths) {
+                    switch (path) {
+                        case "video.mixEffects.0.previewInput":
+                            this.previewInputSelector.selectItem(INPUTS.findIndex((i) => i.number == this.atem.state.video.mixEffects[0].previewInput));
+                            break;
+                        case "video.mixEffects.0.programInput":
+                            this.programInputSelector.selectItem(INPUTS.findIndex((i) => i.number == this.atem.state.video.mixEffects[0].programInput));
+                            break;
+                    }
+                }
             });
         } catch (e) {
             this.handleError(e);
