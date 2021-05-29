@@ -225,15 +225,16 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 this.mediaPoolStillsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({sourceType: MediaSourceType.Still, stillIndex: Number(i.id) - 1}));
                 this.mediaPoolClipsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({ sourceType: MediaSourceType.Clip, clipIndex: Number(i.id) - 1 }));
 
-                this.macroParameters = this.atem.state.macro.macroProperties.map((m, i) => {
-                    if (!m.isUsed) return;
-                    const p = new SwitchParameter(false, m.name, (e) => {
+                this.macroParameters = this.atem.state.macro.macroProperties.map((macro, index) => {
+                    if (!macro.isUsed) return;
+                    const p = new SwitchParameter(false, macro.name, (e) => {
                         if (e.value == true) {
                             p.value = false;
-                            this.atem.macroRun(i);
+                            this.atem.macroRun(index);
                         }
                     });
                     p.color = "#ffa200";
+                    p.context = macro.name;
                     return p;
                 }).filter((p) => !!p);
                 
@@ -243,8 +244,9 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                         this.cutParameter.value = false;
                     }
                 });
-
+                this.cutParameter.context = "CUT";
                 this.cutParameter.color = "#ffffff";
+
                 this.autoParameter = new SwitchParameter(false, "auto", (e) => {
                     if (e.value == true) {
                         this.atem.autoTransition();
@@ -252,14 +254,16 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                         this.autoParameter.value =  false;
                     }
                 });
-
+                this.autoParameter.context = "AUTO";
                 this.autoParameter.color = "#ffffff";
+
                 this.ftbParameter = new SwitchParameter(false, "ftb", (e) => {
                     if (e.value == true) {
                         this.atem.fadeToBlack();
                         this.ftbParameter.value = false;
                     }
                 });
+                this.ftbParameter.context = "Fade To Black";
                 this.updateFtbState();
 
                 this.tBarParameter = new ContinuousParameter(0, 0, 10000, 1, "tbar", (e) => {
