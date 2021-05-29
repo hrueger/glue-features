@@ -6,7 +6,7 @@ import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/Fea
 import { BehaviorSubject } from "rxjs";
 import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
 import { Atem } from "atem-connection";
-import { MediaSourceType } from "atem-connection/dist/enums";
+import { MediaSourceType, TransitionStyle } from "atem-connection/dist/enums";
 
 enum ZoneId {
     PROGRAM = "PROGRAM",
@@ -15,7 +15,8 @@ enum ZoneId {
     MEDIAPOOL_CLIPS = "MEDIAPOOL_CLIPS",
     MACROS = "MACROS",
     TBAR = "TBAR",
-    BUS = "BUS"
+    BUS = "BUS",
+    TRANSITIONS = "TRANSITIONS",
 }
 
 const WAITING_TIME = 5000;
@@ -95,6 +96,14 @@ let INPUTS: { name: string, number: number }[] = [
     { name: "Input1Direct", number: 11001 },
 ];
 
+let TRANSITIONS: { name: string; number: number }[] = [
+    { name: "MIX", number: TransitionStyle.MIX },
+    { name: "DIP", number: TransitionStyle.DIP },
+    { name: "WIPE", number: TransitionStyle.WIPE },
+    // { name: "STING", number: TransitionStyle.STING },
+    { name: "DVE", number: TransitionStyle.DVE },
+]
+
 export default class BlackmagicATEMFeature extends EventEmitter implements Feature {
     public zones: BehaviorSubject<ZoneConfig[]> = new BehaviorSubject<ZoneConfig[]>([
         {
@@ -146,6 +155,13 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
             description: "",
             widgetTypes: [HWWidgetType.LEDBUTTON],
         },
+        {
+            color: "#9000ff",
+            id: ZoneId.TRANSITIONS,
+            name: "Transitions",
+            description: "",
+            widgetTypes: [HWWidgetType.LEDBUTTON],
+        },
     ]);
     public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
         FeatureStatus.INITIALIZING,
@@ -158,6 +174,7 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
 
     private mediaPoolStillsSelector: SingleListSelector;
     private mediaPoolClipsSelector: SingleListSelector;
+    private transitionSelector: SingleListSelector;
     private macroParameters: SwitchParameter[] = [];
 
     private cutParameter: SwitchParameter;
@@ -198,6 +215,9 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 this.updateProgramInput();
                 this.programInputSelector.on("selected", (i) => this.atem.changeProgramInput(Number(i.id)));
 
+                this.transitionSelector = new SingleListSelector("Transition", TRANSITIONS.map((i) => ({ name: i.name, id: `${i.number}`, hue: 250 })));
+                this.updateTransitionStyle();
+                this.transitionSelector.on("selected", (i) => this.atem.setTransitionStyle({ nextStyle: i.id }));
                 
                 this.mediaPoolStillsSelector = new SingleListSelector("MediaPool Stills", this.getMediaPoolSelectorItems("stills"));
                 this.mediaPoolClipsSelector = new SingleListSelector("MediaPool Clips", this.getMediaPoolSelectorItems("clips"));
@@ -247,6 +267,9 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                             break;
                         case "video.mixEffects.0.programInput":
                             this.updateProgramInput();
+                            break;
+                        case "video.mixEffects.0.transitionProperties":
+                            this.updateTransitionStyle();
                             break;
                         case "video.mixEffects.0.transitionPosition":
                             if (state.video.mixEffects[0].transitionPosition.handlePosition === 0) {
@@ -317,6 +340,10 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
         this.previewInputSelector.selectItem(INPUTS.findIndex((i) => i.number == this.atem.state.video.mixEffects[0].previewInput));
     }
 
+    private updateTransitionStyle() {
+        this.transitionSelector.selectItem(TRANSITIONS.findIndex((i) => i.number == this.atem.state.video.mixEffects[0].transitionProperties.style));
+    }
+
     private getMediaPoolSelectorItems(type: "stills" | "clips") {
         return (this.atem.state.media[type == "stills" ? "stillPool" : "clipPool"] as any).filter((s) => s.isUsed)
             .map((s, i) => ({ name: type == "stills" ? s.fileName : s.name, id: `${i + 1}`, hue: 200 }));
@@ -351,6 +378,8 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 return this.previewInputSelector.parameters;
             case ZoneId.PROGRAM:
                 return this.programInputSelector.parameters;
+            case ZoneId.TRANSITIONS:
+                return this.transitionSelector.parameters;
             case ZoneId.TBAR:
                 return this.paramArrayToMap([this.tBarParameter]);
             case ZoneId.BUS:
