@@ -1,6 +1,6 @@
 import { Feature, ZoneConfig, SingleListSelector } from "@makeproaudio/glue-feature-tools";
 import { Registry } from "@makeproaudio/makehaus-nodered-lib";
-import { Parameter, setSynapsesManager, SwitchParameter } from "@makeproaudio/parameters-js";
+import { ContinuousParameter, Parameter, setSynapsesManager, SwitchParameter } from "@makeproaudio/parameters-js";
 import { EventEmitter } from "events";
 import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
 import { BehaviorSubject } from "rxjs";
@@ -14,6 +14,8 @@ enum ZoneId {
     MEDIAPOOL_STILLS = "MEDIAPOOL_STILLS",
     MEDIAPOOL_CLIPS = "MEDIAPOOL_CLIPS",
     MACROS = "MACROS",
+    TBAR = "TBAR",
+    BUS = "BUS"
 }
 
 const WAITING_TIME = 5000;
@@ -130,6 +132,20 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
             description: "",
             widgetTypes: [HWWidgetType.LEDBUTTON],
         },
+        {
+            color: "#888888",
+            id: ZoneId.TBAR,
+            name: "T-Bar",
+            description: "",
+            widgetTypes: [HWWidgetType.MOTORFADER],
+        },
+        {
+            color: "#FFFF00",
+            id: ZoneId.BUS,
+            name: "Bus Actions",
+            description: "",
+            widgetTypes: [HWWidgetType.LEDBUTTON],
+        },
     ]);
     public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
         FeatureStatus.INITIALIZING,
@@ -142,10 +158,14 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
 
     private mediaPoolStillsSelector: SingleListSelector;
     private mediaPoolClipsSelector: SingleListSelector;
+    private macroParameters: SwitchParameter[] = [];
 
-    private cutParameter = new SwitchParameter(false, "cut");
-    private autoParameter = new SwitchParameter(false, "auto");
-    private ftbParameter = new SwitchParameter(false, "ftb");
+    private cutParameter: SwitchParameter;
+    private autoParameter: SwitchParameter;
+    private ftbParameter: SwitchParameter;
+    private ftbBlinkInterval?: NodeJS.Timeout;
+
+    private tBarParameter: ContinuousParameter;
 
     private studioMode = false;
 
@@ -170,17 +190,50 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
 
                 INPUTS = INPUTS.filter((i) => this.atem.state.inputs[i.number.toString()]);
 
-                this.programInputSelector = new SingleListSelector("Program Bus", INPUTS.map((i) => ({ name: i.name, id: `${i.number}`, hue: 0 })));
-                this.programInputSelector.on("selected", (i) => this.atem.changeProgramInput(Number(i.id)));
-                this.previewInputSelector = new SingleListSelector("Preview Bus", INPUTS.map((i) => ({name: i.name, id: `${i.number}`, hue: 120})));
+                this.previewInputSelector = new SingleListSelector("Preview Bus", INPUTS.map((i) => ({ name: i.name, id: `${i.number}`, hue: 120 })));
+                this.updatePreviewInput();
                 this.previewInputSelector.on("selected", (i) => this.atem.changePreviewInput(Number(i.id)));
+
+                this.programInputSelector = new SingleListSelector("Program Bus", INPUTS.map((i) => ({ name: i.name, id: `${i.number}`, hue: 0 })));
+                this.updateProgramInput();
+                this.programInputSelector.on("selected", (i) => this.atem.changeProgramInput(Number(i.id)));
 
                 
                 this.mediaPoolStillsSelector = new SingleListSelector("MediaPool Stills", this.getMediaPoolSelectorItems("stills"));
-                this.mediaPoolStillsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({sourceType: MediaSourceType.Still, stillIndex: Number(i.id) - 1}));
-                
                 this.mediaPoolClipsSelector = new SingleListSelector("MediaPool Clips", this.getMediaPoolSelectorItems("clips"));
-                this.mediaPoolClipsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({sourceType: MediaSourceType.Clip, clipIndex: Number(i.id) - 1}));
+                this.updateMediaPool();
+                this.mediaPoolStillsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({sourceType: MediaSourceType.Still, stillIndex: Number(i.id) - 1}));
+                this.mediaPoolClipsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({ sourceType: MediaSourceType.Clip, clipIndex: Number(i.id) - 1 }));
+
+                
+                this.cutParameter = new SwitchParameter(false, "cut", (e) => {
+                    if (e.value == true) {
+                        this.atem.cut();
+                        this.cutParameter.value = false;
+                    }
+                });
+
+                this.cutParameter.color = "#ffffff";
+                this.autoParameter = new SwitchParameter(false, "auto", (e) => {
+                    if (e.value == true) {
+                        this.atem.autoTransition();
+                        this.autoParameter.color = "#ff0000";
+                        this.autoParameter.value =  false;
+                    }
+                });
+
+                this.autoParameter.color = "#ffffff";
+                this.ftbParameter = new SwitchParameter(false, "ftb", (e) => {
+                    if (e.value == true) {
+                        this.atem.fadeToBlack();
+                        this.ftbParameter.value = false;
+                    }
+                });
+                this.updateFtbState();
+
+                this.tBarParameter = new ContinuousParameter(0, 0, 10000, 1, "tbar", (e) => {
+                    this.atem.setTransitionPosition(e.value);
+                });
 
                 this.allParametersLoaded = true;
                 this.resolveParamPromise?.();
@@ -190,10 +243,24 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 for (const path of paths) {
                     switch (path) {
                         case "video.mixEffects.0.previewInput":
-                            this.previewInputSelector.selectItem(INPUTS.findIndex((i) => i.number == this.atem.state.video.mixEffects[0].previewInput));
+                            this.updatePreviewInput();
                             break;
                         case "video.mixEffects.0.programInput":
-                            this.programInputSelector.selectItem(INPUTS.findIndex((i) => i.number == this.atem.state.video.mixEffects[0].programInput));
+                            this.updateProgramInput();
+                            break;
+                        case "video.mixEffects.0.transitionPosition":
+                            if (state.video.mixEffects[0].transitionPosition.handlePosition === 0) {
+                                this.autoParameter.color =  "#ffffff";
+                            } else {
+                                this.autoParameter.color = "#ff0000";
+                            }
+                            // this.tBarParameter.update(state.video.mixEffects[0].transitionPosition.handlePosition);
+                            break;
+                        case "media.players.0":
+                            this.updateMediaPool();
+                            break;
+                        case "video.mixEffects.0.fadeToBlack":
+                            this.updateFtbState();
                             break;
                     }
                     if (path.startsWith("media.stillPool")) {
@@ -206,6 +273,48 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
         } catch (e) {
             this.handleError(e);
         }
+    }
+
+    private updateFtbState() {
+        if (this.atem.state.video.mixEffects[0].fadeToBlack.inTransition) {
+            this.ftbParameter.color = "#ffff00";
+            this.clearFtbBlinkInterval();
+        } else if (this.atem.state.video.mixEffects[0].fadeToBlack.isFullyBlack) {
+            if (!this.ftbBlinkInterval) {
+                this.ftbBlinkInterval = setInterval(() => {
+                    if (this.ftbParameter.color === "#ff0000") {
+                        this.ftbParameter.color = "#111111";
+                    } else {
+                        this.ftbParameter.color = "#ff0000";
+                    }
+                }, 500);
+            }
+        } else {
+            this.clearFtbBlinkInterval();
+            this.ftbParameter.color = "#888888";
+        }
+    }
+
+    private clearFtbBlinkInterval() {
+        if (this.ftbBlinkInterval)
+            clearInterval(this.ftbBlinkInterval);
+        this.ftbBlinkInterval = undefined;
+    }
+
+    private updateMediaPool() {
+        if (this.atem.state.media.players[0].sourceType == MediaSourceType.Clip) {
+            this.mediaPoolStillsSelector.selectItem(this.atem.state.media.players[0].clipIndex);
+        } else if (this.atem.state.media.players[0].sourceType == MediaSourceType.Still) {
+            this.mediaPoolStillsSelector.selectItem(this.atem.state.media.players[0].stillIndex);
+        }
+    }
+
+    private updateProgramInput() {
+        this.programInputSelector.selectItem(INPUTS.findIndex((i) => i.number == this.atem.state.video.mixEffects[0].programInput));
+    }
+
+    private updatePreviewInput() {
+        this.previewInputSelector.selectItem(INPUTS.findIndex((i) => i.number == this.atem.state.video.mixEffects[0].previewInput));
     }
 
     private getMediaPoolSelectorItems(type: "stills" | "clips") {
@@ -233,21 +342,26 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
         }
         switch (zoneConfig.id) {
             case ZoneId.MACROS:
-                break;
+                return this.paramArrayToMap(this.macroParameters);
             case ZoneId.MEDIAPOOL_CLIPS:
                 return this.mediaPoolClipsSelector.parameters;
-                break;
             case ZoneId.MEDIAPOOL_STILLS:
                 return this.mediaPoolStillsSelector.parameters;
-                break;
             case ZoneId.PREVIEW:
                 return this.previewInputSelector.parameters;
             case ZoneId.PROGRAM:
                 return this.programInputSelector.parameters;
+            case ZoneId.TBAR:
+                return this.paramArrayToMap([this.tBarParameter]);
+            case ZoneId.BUS:
+                return this.paramArrayToMap([this.cutParameter, this.autoParameter, null, this.ftbParameter]);
         }
         return new Map<number, Parameter<any>>();
     }
 
+    private paramArrayToMap(parameters: Parameter<any>[]): Map<number, Parameter<any>> {
+        return new Map(parameters.map((p, i) => [i, p]));
+    }
 
     public async exit() {
         await this.atem?.disconnect();
