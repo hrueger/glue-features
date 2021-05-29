@@ -6,10 +6,13 @@ import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/Fea
 import { BehaviorSubject } from "rxjs";
 import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
 import { Atem } from "atem-connection";
+import { MediaSourceType } from "atem-connection/dist/enums";
 
 enum ZoneId {
     PROGRAM = "PROGRAM",
     PREVIEW = "PREVIEW",
+    MEDIAPOOL_STILLS = "MEDIAPOOL_STILLS",
+    MEDIAPOOL_CLIPS = "MEDIAPOOL_CLIPS",
     MACROS = "MACROS",
 }
 
@@ -107,6 +110,20 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
             widgetTypes: [HWWidgetType.LEDBUTTON],
         },
         {
+            color: "#0000ff",
+            id: ZoneId.MEDIAPOOL_STILLS,
+            name: "MediaPool Stills",
+            description: "",
+            widgetTypes: [HWWidgetType.LEDBUTTON],
+        },
+        {
+            color: "#0000ff",
+            id: ZoneId.MEDIAPOOL_CLIPS,
+            name: "MediaPool Clips",
+            description: "",
+            widgetTypes: [HWWidgetType.LEDBUTTON],
+        },
+        {
             color: "#FFA200",
             id: ZoneId.MACROS,
             name: "Macros",
@@ -122,6 +139,9 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
     //private audioMutedParameters: Map<number, SwitchParameter>;
     private programInputSelector: SingleListSelector;
     private previewInputSelector: SingleListSelector;
+
+    private mediaPoolStillsSelector: SingleListSelector;
+    private mediaPoolClipsSelector: SingleListSelector;
 
     private cutParameter = new SwitchParameter(false, "cut");
     private autoParameter = new SwitchParameter(false, "auto");
@@ -155,6 +175,13 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 this.previewInputSelector = new SingleListSelector("Preview Bus", INPUTS.map((i) => ({name: i.name, id: `${i.number}`, hue: 120})));
                 this.previewInputSelector.on("selected", (i) => this.atem.changePreviewInput(Number(i.id)));
 
+                
+                this.mediaPoolStillsSelector = new SingleListSelector("MediaPool Stills", this.getMediaPoolSelectorItems("stills"));
+                this.mediaPoolStillsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({sourceType: MediaSourceType.Still, stillIndex: Number(i.id) - 1}));
+                
+                this.mediaPoolClipsSelector = new SingleListSelector("MediaPool Clips", this.getMediaPoolSelectorItems("clips"));
+                this.mediaPoolClipsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({sourceType: MediaSourceType.Clip, clipIndex: Number(i.id) - 1}));
+
                 this.allParametersLoaded = true;
                 this.resolveParamPromise?.();
                 this.status.next(FeatureStatus.OK);
@@ -170,11 +197,21 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                             this.programInputSelector.selectItem(INPUTS.findIndex((i) => i.number == this.atem.state.video.mixEffects[0].programInput));
                             break;
                     }
+                    if (path.startsWith("media.stillPool")) {
+                        this.mediaPoolStillsSelector.updateItems(this.getMediaPoolSelectorItems("stills"));
+                    } else if (path.startsWith("media.clipPool")) {
+                        this.mediaPoolStillsSelector.updateItems(this.getMediaPoolSelectorItems("clips"));
+                    }
                 }
             });
         } catch (e) {
             this.handleError(e);
         }
+    }
+
+    private getMediaPoolSelectorItems(type: "stills" | "clips") {
+        return (this.atem.state.media[type == "stills" ? "stillPool" : "clipPool"] as any).filter((s) => s.isUsed)
+            .map((s, i) => ({ name: type == "stills" ? s.fileName : s.name, id: `${i + 1}`, hue: 200 }));
     }
 
     private handleError(e: any) {
@@ -195,12 +232,19 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 this.resolveParamPromise = () => resolve(this.giveParametersForZone(zoneConfig));
             });
         }
-        if (zoneConfig.id == ZoneId.MACROS) {
-            // return this.audioVolumeParameters;
-        } else if (zoneConfig.id == ZoneId.PROGRAM) {
-            return this.programInputSelector.parameters;
-        } else if (zoneConfig.id == ZoneId.PREVIEW) {
-            return this.previewInputSelector.parameters;
+        switch (zoneConfig.id) {
+            case ZoneId.MACROS:
+                break;
+            case ZoneId.MEDIAPOOL_CLIPS:
+                return this.mediaPoolClipsSelector.parameters;
+                break;
+            case ZoneId.MEDIAPOOL_STILLS:
+                return this.mediaPoolStillsSelector.parameters;
+                break;
+            case ZoneId.PREVIEW:
+                return this.previewInputSelector.parameters;
+            case ZoneId.PROGRAM:
+                return this.programInputSelector.parameters;
         }
         return new Map<number, Parameter<any>>();
     }
