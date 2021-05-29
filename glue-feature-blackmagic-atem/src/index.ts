@@ -187,7 +187,6 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 this.status.next(FeatureStatus.OK);
             });
             this.atem.on("stateChanged", (state, paths) => {
-                console.log(paths);
                 for (const path of paths) {
                     switch (path) {
                         case "video.mixEffects.0.previewInput":
@@ -250,7 +249,8 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
     }
 
 
-    public exit() {
-        console.log("OBS-Control Feature exited");
+    public async exit() {
+        await this.atem?.disconnect();
+        console.log("Blackmagic ATEM Feature exited");
     }
 }
