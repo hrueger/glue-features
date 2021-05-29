@@ -225,6 +225,17 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 this.mediaPoolStillsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({sourceType: MediaSourceType.Still, stillIndex: Number(i.id) - 1}));
                 this.mediaPoolClipsSelector.on("selected", (i) => this.atem.setMediaPlayerSource({ sourceType: MediaSourceType.Clip, clipIndex: Number(i.id) - 1 }));
 
+                this.macroParameters = this.atem.state.macro.macroProperties.map((m, i) => {
+                    if (!m.isUsed) return;
+                    const p = new SwitchParameter(false, m.name, (e) => {
+                        if (e.value == true) {
+                            p.value = false;
+                            this.atem.macroRun(i);
+                        }
+                    });
+                    p.color = "#ffa200";
+                    return p;
+                }).filter((p) => !!p);
                 
                 this.cutParameter = new SwitchParameter(false, "cut", (e) => {
                     if (e.value == true) {
