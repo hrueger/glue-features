@@ -1,4 +1,4 @@
-import { Feature, ZoneConfig, SingleListSelector } from "@makeproaudio/glue-feature-tools";
+import { Feature, ZoneConfig, SingleListSelector, FeatureSetting } from "@makeproaudio/glue-feature-tools";
 import { Registry } from "@makeproaudio/makehaus-nodered-lib";
 import { ContinuousParameter, Parameter, setSynapsesManager, SwitchParameter } from "@makeproaudio/parameters-js";
 import { EventEmitter } from "events";
@@ -218,9 +218,6 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
     public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
         FeatureStatus.INITIALIZING,
     );
-    private registry: Registry;
-    // private audioVolumeParameters: Map<number, ContinuousParameter>;
-    //private audioMutedParameters: Map<number, SwitchParameter>;
     private programInputSelector: SingleListSelector;
     private previewInputSelector: SingleListSelector;
 
@@ -241,11 +238,12 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
     resolveParamPromise: () => void;
     private allParametersLoaded = false;
     private atem = new Atem();
+    private settings: FeatureSetting;
 
-    public constructor(settings: any, registry: Registry, synapsesManager: any) {
+    public constructor(settings: FeatureSetting, registry: Registry, synapsesManager: any) {
         super();
         setSynapsesManager(synapsesManager);
-        this.registry = registry;
+        this.settings = settings;
     
         this.status.next(FeatureStatus.WAITING);
     }
@@ -407,7 +405,12 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
     }
 
     public connect() {
-        this.atem.connect("192.168.178.201");
+        this.atem.connect(this.settings?.settings?.general?.connection?.ip || "");
+    }
+
+    public onSettingsChange(settings: FeatureSetting) {
+        this.settings = settings;
+        this.connect();
     }
 
     private updateAudioParameters() {

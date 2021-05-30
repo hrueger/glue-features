@@ -36,9 +36,16 @@
         "general": {
           "title": "General",
           "groups": {
-            "myGroup1": {
-              "title": "Group 1",
-              "fields": {}
+            "connection": {
+              "title": "Connection",
+              "fields": {
+                "ip": {
+                  "title": "IP Address / Hostname",
+                  "placeholder": "IP Address / Hostname",
+                  "help": "Insert the IP address of the hostname of your Blackmagic ATEM.",
+                  "type": "TEXT"
+                }
+              }
             }
           }
         }
