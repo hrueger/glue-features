@@ -6,9 +6,19 @@ import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/Fea
 import { BehaviorSubject } from "rxjs";
 import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
 import { Atem } from "atem-connection";
-import { MediaSourceType, TransitionStyle } from "atem-connection/dist/enums";
+import { FairlightAudioMixOption, FairlightInputType, MediaSourceType, TransitionStyle } from "atem-connection/dist/enums";
+import { FairlightAudioSourceProperties } from "atem-connection/dist/state/fairlight";
 
+type AudioParameterSet = {
+    gain: ContinuousParameter,
+    level: ContinuousParameter,
+    balance: ContinuousParameter,
+    active: SwitchParameter,
+    afv: SwitchParameter,
+};
+    
 enum ZoneId {
+    // Video
     PROGRAM = "PROGRAM",
     PREVIEW = "PREVIEW",
     MEDIAPOOL_STILLS = "MEDIAPOOL_STILLS",
@@ -17,6 +27,12 @@ enum ZoneId {
     TBAR = "TBAR",
     BUS = "BUS",
     TRANSITIONS = "TRANSITIONS",
+    // Audio
+    AUDIO_GAIN = "AUDIO_GAIN",
+    AUDIO_LEVEL = "AUDIO_LEVEL",
+    AUDIO_BALANCE = "AUDIO_BALANCE",
+    AUDIO_ACTIVE = "AUDIO_ACTIVE",
+    AUDIO_AFV = "AUDIO_AFV",
 }
 
 const WAITING_TIME = 5000;
@@ -162,6 +178,42 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
             description: "",
             widgetTypes: [HWWidgetType.LEDBUTTON],
         },
+        // Audio
+        {
+            color: "#34c3eb",
+            id: ZoneId.AUDIO_GAIN,
+            name: "Audio Gain",
+            description: "",
+            widgetTypes: [HWWidgetType.ENCODER, HWWidgetType.MOTORFADER],
+        },
+        {
+            color: "#34c3eb",
+            id: ZoneId.AUDIO_LEVEL,
+            name: "Audio Level",
+            description: "",
+            widgetTypes: [HWWidgetType.ENCODER, HWWidgetType.MOTORFADER],
+        },
+        {
+            color: "#34c3eb",
+            id: ZoneId.AUDIO_BALANCE,
+            name: "Audio Balance",
+            description: "",
+            widgetTypes: [HWWidgetType.ENCODER, HWWidgetType.MOTORFADER],
+        },
+        {
+            color: "#34c3eb",
+            id: ZoneId.AUDIO_ACTIVE,
+            name: "Audio Active",
+            description: "",
+            widgetTypes: [HWWidgetType.LEDBUTTON],
+        },
+        {
+            color: "#34c3eb",
+            id: ZoneId.AUDIO_AFV,
+            name: "Audio AFV",
+            description: "",
+            widgetTypes: [HWWidgetType.LEDBUTTON],
+        },
     ]);
     public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
         FeatureStatus.INITIALIZING,
@@ -176,6 +228,8 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
     private mediaPoolClipsSelector: SingleListSelector;
     private transitionSelector: SingleListSelector;
     private macroParameters: SwitchParameter[] = [];
+    
+    private audioParameters: Record<string, AudioParameterSet> = {};
 
     private cutParameter: SwitchParameter;
     private autoParameter: SwitchParameter;
@@ -237,6 +291,47 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                     p.context = macro.name;
                     return p;
                 }).filter((p) => !!p);
+
+                this.audioParameters = Object.fromEntries(Object.entries(this.atem.state.fairlight.inputs).map(([input, config], index) => {
+                    const gainParameter = new ContinuousParameter(0, -10000, 600, 20, `gain-${input}`, (e) => {
+                        this.atem.setFairlightAudioMixerSourceProps(Number(input), Object.keys(config.sources)[0], {
+                            gain: e.value,
+                        });
+                    });
+                    const levelParameter = new ContinuousParameter(0, -10000, 1000, 20, `level-${input}`, (e) => {
+                        this.atem.setFairlightAudioMixerSourceProps(Number(input), Object.keys(config.sources)[0], {
+                            faderGain: e.value,
+                        });
+                    });
+                    const balanceParameter = new ContinuousParameter(0, -10000, +10000, 30, `balance-${input}`, (e) => {
+                        this.atem.setFairlightAudioMixerSourceProps(Number(input), Object.keys(config.sources)[0], {
+                            balance: e.value,
+                        });
+                    });
+                    const activeParameter = new SwitchParameter(false, `active-${input}`, (e) => {
+                        this.atem.setFairlightAudioMixerSourceProps(Number(input), Object.keys(config.sources)[0], {
+                            mixOption: e.value ? FairlightAudioMixOption.On : afvParameter.value ? FairlightAudioMixOption.AudioFollowVideo : FairlightAudioMixOption.Off,
+                        });
+                    });
+                    const afvParameter = new SwitchParameter(false, `afv-${input}`, (e) => {
+                        this.atem.setFairlightAudioMixerSourceProps(Number(input), Object.keys(config.sources)[0], {
+                            mixOption: e.value ? FairlightAudioMixOption.AudioFollowVideo : activeParameter.value ? FairlightAudioMixOption.On : FairlightAudioMixOption.Off,
+                        });
+                    });
+                    const p: AudioParameterSet = {
+                        gain: gainParameter,
+                        level: levelParameter,
+                        balance: balanceParameter,
+                        active: activeParameter,
+                        afv: afvParameter,
+                    };
+                    for (const param of Object.values(p)) {
+                        param.color = "#34c3eb";
+                        param.context = this.atem.state.inputs[Number(input)]?.longName || (config.properties.inputType == FairlightInputType.AudioIn ? `Audio In ${index - 4}` : `Unknown ${index + 1}`);
+                    }
+                    return [input, p];
+                }));
+                this.updateAudioParameters();
                 
                 this.cutParameter = new SwitchParameter(false, "cut", (e) => {
                     if (e.value == true) {
@@ -305,11 +400,26 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                         this.mediaPoolStillsSelector.updateItems(this.getMediaPoolSelectorItems("stills"));
                     } else if (path.startsWith("media.clipPool")) {
                         this.mediaPoolStillsSelector.updateItems(this.getMediaPoolSelectorItems("clips"));
+                    } else if (path.startsWith("fairlight.inputs")) {
+                        this.updateAudioParameters();
                     }
                 }
             });
         } catch (e) {
             this.handleError(e);
+        }
+    }
+
+    private updateAudioParameters() {
+        for (const [input, { gain, level, balance, active, afv }] of Object.entries(this.audioParameters)) {
+            const properties = this.atem.state.fairlight.inputs[input].sources[Object.keys(this.atem.state.fairlight.inputs[input].sources)[0]].properties as FairlightAudioSourceProperties;
+            gain.value = properties.gain;
+            level.value = properties.faderGain;
+            balance.value = properties.balance;
+            active.value = properties.mixOption == FairlightAudioMixOption.On;
+            active.color = properties.mixOption == FairlightAudioMixOption.On ? "#ff0000" : "#ffffff";
+            afv.value = properties.mixOption == FairlightAudioMixOption.AudioFollowVideo;
+            afv.color = properties.mixOption == FairlightAudioMixOption.AudioFollowVideo ? "#ff0000" : "#222200";
         }
     }
 
@@ -399,6 +509,17 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 return this.paramArrayToMap([this.tBarParameter]);
             case ZoneId.BUS:
                 return this.paramArrayToMap([this.cutParameter, this.autoParameter, null, this.ftbParameter]);
+            // Audio
+            case ZoneId.AUDIO_GAIN:
+                return this.paramArrayToMap(Object.values(this.audioParameters).map((s) => s.gain));
+            case ZoneId.AUDIO_LEVEL:
+                return this.paramArrayToMap(Object.values(this.audioParameters).map((s) => s.level));
+            case ZoneId.AUDIO_BALANCE:
+                return this.paramArrayToMap(Object.values(this.audioParameters).map((s) => s.balance));
+            case ZoneId.AUDIO_ACTIVE:
+                return this.paramArrayToMap(Object.values(this.audioParameters).map((s) => s.active));
+            case ZoneId.AUDIO_AFV:
+                return this.paramArrayToMap(Object.values(this.audioParameters).map((s) => s.afv));
         }
         return new Map<number, Parameter<any>>();
     }

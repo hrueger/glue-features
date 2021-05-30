@@ -6,7 +6,7 @@
         "module": "commonjs",
         "esModuleInterop": true,
         "lib": [
-            "es2018",
+            "es2019",
         ]
     },
     "files": [
