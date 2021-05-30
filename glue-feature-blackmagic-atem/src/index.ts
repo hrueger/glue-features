@@ -238,10 +238,6 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
 
     private tBarParameter: ContinuousParameter;
 
-    private studioMode = false;
-
-    private ignoreVolumeChanges: number = 0;
-    private ignoreMutedChanges: number = 0;
     resolveParamPromise: () => void;
     private allParametersLoaded = false;
     private atem = new Atem();
@@ -255,10 +251,9 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
     }
 
     public init() {
-        try {
-            this.atem.connect("192.168.178.23");
-            this.atem.on("connected", () => {
-
+        this.atem.on("connected", () => {
+            if (!this.allParametersLoaded) {
+                // is connected for the first time
                 INPUTS = INPUTS.filter((i) => this.atem.state.inputs[i.number.toString()]);
 
                 this.previewInputSelector = new SingleListSelector("Preview Bus", INPUTS.map((i) => ({ name: i.name, id: `${i.number}`, hue: 120 })));
@@ -364,50 +359,55 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
                 this.tBarParameter = new ContinuousParameter(0, 0, 10000, 1, "tbar", (e) => {
                     this.atem.setTransitionPosition(e.value);
                 });
-
                 this.allParametersLoaded = true;
                 this.resolveParamPromise?.();
-                this.status.next(FeatureStatus.OK);
-            });
-            this.atem.on("stateChanged", (state, paths) => {
-                for (const path of paths) {
-                    switch (path) {
-                        case "video.mixEffects.0.previewInput":
-                            this.updatePreviewInput();
-                            break;
-                        case "video.mixEffects.0.programInput":
-                            this.updateProgramInput();
-                            break;
-                        case "video.mixEffects.0.transitionProperties":
-                            this.updateTransitionStyle();
-                            break;
-                        case "video.mixEffects.0.transitionPosition":
-                            if (state.video.mixEffects[0].transitionPosition.handlePosition === 0) {
-                                this.autoParameter.color =  "#ffffff";
-                            } else {
-                                this.autoParameter.color = "#ff0000";
-                            }
-                            // this.tBarParameter.update(state.video.mixEffects[0].transitionPosition.handlePosition);
-                            break;
-                        case "media.players.0":
-                            this.updateMediaPool();
-                            break;
-                        case "video.mixEffects.0.fadeToBlack":
-                            this.updateFtbState();
-                            break;
-                    }
-                    if (path.startsWith("media.stillPool")) {
-                        this.mediaPoolStillsSelector.updateItems(this.getMediaPoolSelectorItems("stills"));
-                    } else if (path.startsWith("media.clipPool")) {
-                        this.mediaPoolStillsSelector.updateItems(this.getMediaPoolSelectorItems("clips"));
-                    } else if (path.startsWith("fairlight.inputs")) {
-                        this.updateAudioParameters();
-                    }
+            }
+            this.status.next(FeatureStatus.OK);
+        });
+        this.atem.on("disconnected", () => {
+            this.status.next(FeatureStatus.WAITING);
+        });
+        this.atem.on("stateChanged", (state, paths) => {
+            for (const path of paths) {
+                switch (path) {
+                    case "video.mixEffects.0.previewInput":
+                        this.updatePreviewInput();
+                        break;
+                    case "video.mixEffects.0.programInput":
+                        this.updateProgramInput();
+                        break;
+                    case "video.mixEffects.0.transitionProperties":
+                        this.updateTransitionStyle();
+                        break;
+                    case "video.mixEffects.0.transitionPosition":
+                        if (state.video.mixEffects[0].transitionPosition.handlePosition === 0) {
+                            this.autoParameter.color =  "#ffffff";
+                        } else {
+                            this.autoParameter.color = "#ff0000";
+                        }
+                        // this.tBarParameter.update(state.video.mixEffects[0].transitionPosition.handlePosition);
+                        break;
+                    case "media.players.0":
+                        this.updateMediaPool();
+                        break;
+                    case "video.mixEffects.0.fadeToBlack":
+                        this.updateFtbState();
+                        break;
                 }
-            });
-        } catch (e) {
-            this.handleError(e);
-        }
+                if (path.startsWith("media.stillPool")) {
+                    this.mediaPoolStillsSelector.updateItems(this.getMediaPoolSelectorItems("stills"));
+                } else if (path.startsWith("media.clipPool")) {
+                    this.mediaPoolStillsSelector.updateItems(this.getMediaPoolSelectorItems("clips"));
+                } else if (path.startsWith("fairlight.inputs")) {
+                    this.updateAudioParameters();
+                }
+            }
+        });
+        this.connect();
+    }
+
+    public connect() {
+        this.atem.connect("192.168.178.201");
     }
 
     private updateAudioParameters() {
@@ -472,18 +472,6 @@ export default class BlackmagicATEMFeature extends EventEmitter implements Featu
     private getMediaPoolSelectorItems(type: "stills" | "clips") {
         return (this.atem.state.media[type == "stills" ? "stillPool" : "clipPool"] as any).filter((s) => s.isUsed)
             .map((s, i) => ({ name: type == "stills" ? s.fileName : s.name, id: `${i + 1}`, hue: 200 }));
-    }
-
-    private handleError(e: any) {
-        if (e.status == "error" && (e.code == "CONNECTION_ERROR" || e.code == "NOT_CONNECTED")) {
-            this.status.next(FeatureStatus.WAITING);
-            setTimeout(() => {
-                this.init();
-            }, WAITING_TIME);
-        } else {
-            console.log(e);
-            this.status.next(FeatureStatus.ERROR);
-        }
     }
 
     public giveParametersForZone(zoneConfig: ZoneConfig): Map<number, Parameter<any>> | Promise<Map<number, Parameter<any>>> {
