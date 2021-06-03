@@ -14,8 +14,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@makeproaudio/glue-feature-tools": "0.0.27",
-    "@makeproaudio/makehaus-nodered-lib": "^1.1.0-beta.31",
+    "@makeproaudio/glue-feature-tools": "file:../../glue-feature-tools/makeproaudio-glue-feature-tools-0.0.35.tgz",
+    "@makeproaudio/makehaus-nodered-lib": "file:../../makehaus-nodered-lib/makeproaudio-makehaus-nodered-lib-1.1.0-beta.34.tgz",
     "@makeproaudio/parameters-js": "file:../../parameters-js/makeproaudio-parameters-js-1.1.0-beta.18.tgz",
     "obs-websocket-js": "^4.0.2",
     "rxjs": "^6.6.7",
@@ -36,9 +36,33 @@
         "general": {
           "title": "General",
           "groups": {
-            "myGroup1": {
-              "title": "Group 1",
-              "fields": {}
+            "connection": {
+              "title": "Connection",
+              "fields": {
+                "ip": {
+                  "title": "IP Address / Hostname",
+                  "placeholder": "IP Address / Hostname",
+                  "help": "Insert the IP address or the hostname of your OBS instance.",
+                  "type": "TEXT"
+                },
+                "port": {
+                  "title": "Port",
+                  "placeholder": "Default: 4444",
+                  "help": "Insert the port configured in the obs-websocket plugin.",
+                  "type": "NUMBER"
+                }
+              }
+            },
+            "security": {
+              "title": "Security",
+              "fields": {
+                "password": {
+                  "title": "Password",
+                  "placeholder": "Password",
+                  "help": "Insert the password configured in the obs-websocket plugin. Leave blank if authentication is disabled.",
+                  "type": "TEXT"
+                }
+              }
             }
           }
         }

@@ -1,12 +1,11 @@
-import { Feature, ZoneConfig, SingleListSelector } from "@makeproaudio/glue-feature-tools";
-import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
+import { Feature, ZoneConfig, SingleListSelector, FeatureSetting } from "@makeproaudio/glue-feature-tools";
 import { Parameter, setSynapsesManager, ContinuousParameter, SwitchParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 import { EventEmitter } from "events";
-import * as OBSControl from "obs-websocket-js";
+import OBSControl from "obs-websocket-js";
 import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
 import { BehaviorSubject } from "rxjs";
-import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
+import { HWWidgetType, Registry } from "@makeproaudio/makehaus-nodered-lib";
 
 enum ZoneId {
     SCENES = "SCENES",
@@ -43,7 +42,6 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
     public status: BehaviorSubject<FeatureStatus> = new BehaviorSubject<FeatureStatus>(
         FeatureStatus.INITIALIZING,
     );
-    private registry: Registry;
     private audioVolumeParameters: Map<number, ContinuousParameter>;
     private audioMutedParameters: Map<number, SwitchParameter>;
     private sceneSelector: SingleListSelector;
@@ -56,11 +54,12 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
     resolveParamPromise: () => void;
     private allParametersLoaded = false;
     private obs: OBSControl;
+    settings: FeatureSetting;
 
-    public constructor(settings: any, registry: Registry, synapsesManager: any) {
+    public constructor(settings: FeatureSetting, registry: Registry, synapsesManager: any) {
         super();
         setSynapsesManager(synapsesManager);
-        this.registry = registry;
+        this.settings = settings;
 
         this.obs = new OBSControl();
         this.obs.on("StudioModeSwitched", (s) => {
@@ -107,9 +106,14 @@ export default class OBSControlFeature extends EventEmitter implements Feature {
         this.status.next(FeatureStatus.WAITING);
     }
 
+    public onSettingsChange(settings: FeatureSetting) {
+        this.settings = settings;
+        this.init();
+    }
+
     public init() {
         try {
-            this.obs.connect({ address: "127.0.0.1:4444", password: "secret" }).then(() => {
+            this.obs.connect({ address: `${this.settings?.settings?.general?.connection?.ip || ""}:${this.settings?.settings?.general?.connection?.port || "4444"}`, password: this.settings?.settings?.general?.security?.password }).then(() => {
                 return this.obs.send("GetStudioModeStatus")
             }).then((s) => {
                 this.studioMode = s["studio-mode"];
