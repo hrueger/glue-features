@@ -42,7 +42,7 @@
                 "ip": {
                   "title": "IP Address / Hostname",
                   "placeholder": "IP Address / Hostname",
-                  "help": "Insert the IP address of the hostname of your Blackmagic ATEM.",
+                  "help": "Insert the IP address or the hostname of your Blackmagic ATEM.",
                   "type": "TEXT"
                 }
               }
