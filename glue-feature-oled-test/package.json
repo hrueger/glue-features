@@ -1,6 +1,6 @@
 {
   "name": "@hrueger/glue-feature-oled-test",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "This is a simple feature to test the OLED display",
   "scripts": {
     "build": "npm run build:core",
