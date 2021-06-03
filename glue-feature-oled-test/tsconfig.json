@@ -4,6 +4,7 @@
         "moduleResolution": "node",
         "target": "es2015",
         "module": "commonjs",
+        "esModuleInterop": true,
         "lib": [
             "es2018",
         ]

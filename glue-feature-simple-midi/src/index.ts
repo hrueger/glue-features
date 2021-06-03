@@ -1,4 +1,3 @@
-import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
 import { Parameter, setSynapsesManager, SwitchParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 import * as midi from "easymidi";
@@ -6,7 +5,7 @@ import { Feature, ZoneConfig } from "@makeproaudio/glue-feature-tools";
 import { EventEmitter } from "events";
 import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
 import { BehaviorSubject } from "rxjs";
-import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
+import { HWWidgetType, Registry } from "@makeproaudio/makehaus-nodered-lib";
 
 enum Zone {
     TEST = "TEST"

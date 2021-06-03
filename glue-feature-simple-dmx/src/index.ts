@@ -1,12 +1,11 @@
 import { Feature, ZoneConfig } from "@makeproaudio/glue-feature-tools";
-import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
 import { ContinuousParameter, Parameter, setSynapsesManager, SwitchParameter } from "@makeproaudio/parameters-js";
 import * as DMX from "dmx";
 import { v4 } from "uuid";
 import { EventEmitter } from "events";
 import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
 import { BehaviorSubject } from "rxjs";
-import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
+import { HWWidgetType, Registry } from "@makeproaudio/makehaus-nodered-lib";
 
 enum Zone {
     BLACKOUT = "BLACKOUT",

@@ -15,9 +15,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@makeproaudio/glue-feature-tools": "0.0.27",
-    "@makeproaudio/makehaus-nodered-lib": "^1.1.0-beta.31",
-    "@makeproaudio/parameters-js": "^1.1.0-beta.13",
+    "@makeproaudio/glue-feature-tools": "0.0.36",
+    "@makeproaudio/makehaus-nodered-lib": "^1.1.0-beta.36",
+    "@makeproaudio/parameters-js": "^1.1.0-beta.18",
     "rxjs": "^6.6.7",
     "uuid": "^8.3.2"
   },

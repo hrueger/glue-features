@@ -1,4 +1,3 @@
-import { Registry } from "@makeproaudio/makehaus-nodered-lib/dist/registry/registry";
 import { Parameter, setSynapsesManager, ContinuousParameter } from "@makeproaudio/parameters-js";
 import { v4 } from "uuid";
 import { CustomSelectionMode, CustomSelector, Feature, SingleListSelector, ZoneConfig } from "@makeproaudio/glue-feature-tools";
@@ -6,7 +5,7 @@ import { EventEmitter } from "events";
 import { FeatureEvents } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureEvents";
 import { FeatureStatus } from "@makeproaudio/glue-feature-tools/dist/_models/FeatureStatus";
 import { BehaviorSubject } from "rxjs";
-import { HWWidgetType } from "@makeproaudio/makehaus-nodered-lib";
+import { HWWidgetType, Registry } from "@makeproaudio/makehaus-nodered-lib";
 
 export default class MusicPlayerFeature extends EventEmitter implements Feature {
     public zones: BehaviorSubject<ZoneConfig[]> = new BehaviorSubject<ZoneConfig[]>([
