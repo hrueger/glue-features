@@ -1,6 +1,6 @@
 {
   "name": "@hrueger/glue-feature-music-player",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "scripts": {
     "build": "npm run build:core && npm run build:ui",
     "build:core": "tsc -b tsconfig.json",

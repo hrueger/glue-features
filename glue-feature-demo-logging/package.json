@@ -1,6 +1,6 @@
 {
   "name": "@hrueger/glue-feature-demo-logging",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "scripts": {
     "build:core": "tsc -b tsconfig.json",
     "build": "npm run build:core",
