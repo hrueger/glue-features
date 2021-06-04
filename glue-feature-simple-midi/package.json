@@ -13,16 +13,22 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@makeproaudio/glue-feature-tools": "0.0.36",
     "@makeproaudio/makehaus-nodered-lib": "^1.1.0-beta.36",
     "@makeproaudio/parameters-js": "^1.1.0-beta.18",
+    "easymidi": "^2.0.1"
+  },
+  "dependencies": {
     "@types/uuid": "^8.3.0",
-    "easymidi": "^2.0.1",
     "rxjs": "^6.6.7",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "@makeproaudio/glue-feature-tools": "0.0.36",
+    "@makeproaudio/makehaus-nodered-lib": "^1.1.0-beta.36",
+    "@makeproaudio/parameters-js": "^1.1.0-beta.18",
+    "easymidi": "^2.0.1",
     "@types/node": "~14.14.19",
     "typescript": "4.0.3"
   },

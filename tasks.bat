@@ -5,5 +5,5 @@
 :: run-everywhere.bat "npm i @makeproaudio/parameters-js@1.1.0-beta.9"
 :: run-everywhere.bat "npm i @makeproaudio/makehaus-nodered-lib@1.1.0-beta.25"
 :: run-everywhere.bat "npm i @makeproaudio/glue-feature-tools@0.0.15"
-run-everywhere.bat "npm i @makeproaudio/parameters-js@1.1.0-beta.13 @makeproaudio/makehaus-nodered-lib@1.1.0-beta.31 @makeproaudio/glue-feature-tools@0.0.20 && tsc"
+run-everywhere.bat "npm i @makeproaudio/parameters-js@1.1.0-beta.18 @makeproaudio/makehaus-nodered-lib@1.1.0-beta.36 @makeproaudio/glue-feature-tools@0.0.36 && tsc"
 :: run-everywhere.bat "tsc"
